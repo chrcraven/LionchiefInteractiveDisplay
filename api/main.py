@@ -14,6 +14,7 @@ from api.queue_manager import QueueManager
 from api.train_controller import TrainController
 from api.controls_config import controls_config
 from api.analytics import analytics
+from api.profanity_filter import profanity_filter
 
 # Configure logging
 logging.basicConfig(
@@ -163,6 +164,14 @@ async def join_queue(request: JoinQueueRequest):
     """Join the queue."""
     if not queue_manager:
         raise HTTPException(status_code=500, detail="Queue manager not initialized")
+
+    # Check for profanity in username using online API
+    contains_profanity, matched_word = await profanity_filter.contains_profanity(request.username)
+    if contains_profanity:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Username contains inappropriate language. Please choose a different name."
+        )
 
     result = await queue_manager.join_queue(request.user_id, request.username)
     return result
@@ -475,6 +484,50 @@ async def cleanup_old_analytics(days: int = 90):
         "removed_sessions": removed,
         "message": f"Removed {removed} sessions older than {days} days"
     }
+
+
+@app.get("/profanity-filter")
+async def get_profanity_filter():
+    """Get profanity filter settings."""
+    return {
+        "blocked_words": profanity_filter.get_blocked_words()
+    }
+
+
+@app.post("/profanity-filter/add")
+async def add_blocked_word(word: str, admin_password: Optional[str] = None):
+    """Add a word to the profanity filter."""
+    if not controls_config.is_admin(admin_password or ""):
+        raise HTTPException(status_code=403, detail="Admin password required")
+
+    if profanity_filter.add_blocked_word(word):
+        return {"success": True, "message": f"Added '{word}' to blocked words"}
+    else:
+        return {"success": False, "message": "Word already in list or invalid"}
+
+
+@app.delete("/profanity-filter/remove")
+async def remove_blocked_word(word: str, admin_password: Optional[str] = None):
+    """Remove a word from the profanity filter."""
+    if not controls_config.is_admin(admin_password or ""):
+        raise HTTPException(status_code=403, detail="Admin password required")
+
+    if profanity_filter.remove_blocked_word(word):
+        return {"success": True, "message": f"Removed '{word}' from blocked words"}
+    else:
+        return {"success": False, "message": "Word not found in list"}
+
+
+@app.post("/profanity-filter/reset")
+async def reset_profanity_filter(admin_password: Optional[str] = None):
+    """Reset profanity filter to defaults."""
+    if not controls_config.is_admin(admin_password or ""):
+        raise HTTPException(status_code=403, detail="Admin password required")
+
+    if profanity_filter.reset_to_defaults():
+        return {"success": True, "message": "Reset to default blocked words"}
+    else:
+        return {"success": False, "message": "Failed to reset"}
 
 
 @app.websocket("/ws")

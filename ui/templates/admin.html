@@ -387,6 +387,7 @@
                 <button class="nav-tab active" onclick="switchTab('queue')">Queue Settings</button>
                 <button class="nav-tab" onclick="switchTab('controls')">Train Controls</button>
                 <button class="nav-tab" onclick="switchTab('analytics')">Analytics</button>
+                <button class="nav-tab" onclick="switchTab('filter')">Profanity Filter</button>
                 <button class="nav-tab" onclick="switchTab('theme')">Theme</button>
             </div>
 
@@ -529,6 +530,46 @@
                 </div>
             </div>
 
+            <!-- Profanity Filter Tab -->
+            <div id="filter-tab" class="tab-content">
+                <h2>Profanity Filter</h2>
+                <div class="alert alert-info">
+                    <strong>Info:</strong> The profanity filter uses the <strong>Purgomalum online API</strong> to automatically detect inappropriate usernames. You can add custom blocked words below for additional filtering.
+                </div>
+
+                <div class="password-field">
+                    <input type="password" id="filterAdminPassword" placeholder="Admin Password (required for changes)">
+                </div>
+
+                <!-- Add New Word -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Add Custom Blocked Word</h3>
+                    <p style="color: #6b7280; margin-bottom: 10px; font-size: 14px;">
+                        Add specific words or phrases that should be blocked in addition to the automatic online filter.
+                    </p>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="newBlockedWord" placeholder="Enter word to block" style="flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: 5px;">
+                        <button class="btn btn-primary" onclick="addBlockedWord()">Add Word</button>
+                    </div>
+                </div>
+
+                <!-- Blocked Words List -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Custom Blocked Words</h3>
+                    <p style="color: #6b7280; margin-bottom: 10px; font-size: 14px;">
+                        These are additional words you've added on top of the automatic online filter.
+                    </p>
+                    <div id="blocked-words-list" class="stats-list" style="max-height: 400px;"></div>
+                </div>
+
+                <!-- Reset to Defaults -->
+                <div>
+                    <h3 style="margin-bottom: 15px;">Clear Custom Words</h3>
+                    <p style="color: #6b7280; margin-bottom: 15px;">Remove all custom blocked words. The online API filter will still be active.</p>
+                    <button class="btn btn-secondary" onclick="resetProfanityFilter()">Clear All Custom Words</button>
+                </div>
+            </div>
+
             <!-- Theme Tab -->
             <div id="theme-tab" class="tab-content">
                 <h2>Theme Selection</h2>
@@ -566,6 +607,8 @@
                 loadControls();
             } else if (tabName === 'analytics') {
                 loadAnalytics();
+            } else if (tabName === 'filter') {
+                loadProfanityFilter();
             }
         }
 
@@ -878,6 +921,141 @@
                 const hours = Math.floor(seconds / 3600);
                 const minutes = Math.round((seconds % 3600) / 60);
                 return hours + 'h ' + minutes + 'm';
+            }
+        }
+
+        // Profanity Filter functions
+        async function loadProfanityFilter() {
+            try {
+                const response = await fetch(API_URL + '/profanity-filter');
+                const data = await response.json();
+
+                const container = document.getElementById('blocked-words-list');
+                container.innerHTML = '';
+
+                const words = data.blocked_words || [];
+                if (words.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #6b7280;">No custom blocked words. The online API filter is handling profanity detection.</p>';
+                    return;
+                }
+
+                words.forEach(word => {
+                    const item = document.createElement('div');
+                    item.className = 'stats-item';
+
+                    const label = document.createElement('div');
+                    label.className = 'stats-item-label';
+                    label.textContent = word;
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'btn btn-small';
+                    removeBtn.style.cssText = 'padding: 5px 10px; font-size: 12px; background: #ef4444;';
+                    removeBtn.textContent = 'Remove';
+                    removeBtn.onclick = () => removeBlockedWord(word);
+
+                    item.appendChild(label);
+                    item.appendChild(removeBtn);
+                    container.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Failed to load profanity filter:', error);
+                showMessage('Error loading profanity filter', 'error');
+            }
+        }
+
+        async function addBlockedWord() {
+            const password = document.getElementById('filterAdminPassword').value;
+            const word = document.getElementById('newBlockedWord').value.trim();
+
+            if (!word) {
+                showMessage('Please enter a word to block', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/profanity-filter/add?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage('Word added successfully');
+                        document.getElementById('newBlockedWord').value = '';
+                        loadProfanityFilter();
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to add word', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to add blocked word:', error);
+                showMessage('Error adding blocked word', 'error');
+            }
+        }
+
+        async function removeBlockedWord(word) {
+            const password = document.getElementById('filterAdminPassword').value;
+
+            if (!confirm(`Remove "${word}" from blocked words?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/profanity-filter/remove?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage('Word removed successfully');
+                        loadProfanityFilter();
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to remove word', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to remove blocked word:', error);
+                showMessage('Error removing blocked word', 'error');
+            }
+        }
+
+        async function resetProfanityFilter() {
+            const password = document.getElementById('filterAdminPassword').value;
+
+            if (!confirm('Clear all custom blocked words? The online API filter will still be active.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/profanity-filter/reset?admin_password=' + encodeURIComponent(password), {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage('Custom words cleared successfully');
+                        loadProfanityFilter();
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to reset filter', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to reset profanity filter:', error);
+                showMessage('Error resetting profanity filter', 'error');
             }
         }
 
