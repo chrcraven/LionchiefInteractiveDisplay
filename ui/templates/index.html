@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LionChief Train Controller</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚂 LionChief Train Controller</h1>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- User Login Section -->
+        <div class="section" id="loginSection">
+            <h2>Join the Queue</h2>
+            <div class="login-form">
+                <input type="text" id="usernameInput" placeholder="Enter your name" maxlength="20">
+                <button id="joinQueueBtn" class="btn btn-primary">Join Queue</button>
+            </div>
+        </div>
+
+        <!-- Queue Status Section -->
+        <div class="section" id="queueSection" style="display: none;">
+            <h2>Queue Status</h2>
+            <div class="queue-info">
+                <div class="info-item">
+                    <span class="info-label">Your Position:</span>
+                    <span class="info-value" id="userPosition">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Queue Length:</span>
+                    <span class="info-value" id="queueLength">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Time Remaining:</span>
+                    <span class="info-value" id="timeRemaining">-</span>
+                </div>
+            </div>
+
+            <div class="queue-list" id="queueList"></div>
+
+            <button id="leaveQueueBtn" class="btn btn-danger">Leave Queue</button>
+        </div>
+
+        <!-- Train Controls Section -->
+        <div class="section" id="controlsSection" style="display: none;">
+            <h2>Train Controls</h2>
+            <div class="controls-grid">
+                <!-- Speed Control -->
+                <div class="control-group">
+                    <label for="speedSlider">Speed: <span id="speedValue">0</span></label>
+                    <input type="range" id="speedSlider" min="0" max="31" value="0" step="1">
+                    <div class="speed-buttons">
+                        <button class="btn btn-small" id="stopBtn">STOP</button>
+                        <button class="btn btn-small" id="slowBtn">Slow</button>
+                        <button class="btn btn-small" id="mediumBtn">Medium</button>
+                        <button class="btn btn-small" id="fastBtn">Fast</button>
+                    </div>
+                </div>
+
+                <!-- Direction Control -->
+                <div class="control-group">
+                    <label>Direction</label>
+                    <div class="direction-control">
+                        <button class="btn btn-secondary" id="forwardBtn">Forward</button>
+                        <button class="btn btn-secondary" id="reverseBtn">Reverse</button>
+                        <button class="btn btn-secondary" id="toggleDirectionBtn">Toggle</button>
+                    </div>
+                    <div class="direction-indicator" id="directionIndicator">
+                        Direction: <span id="directionValue">Forward</span>
+                    </div>
+                </div>
+
+                <!-- Sound Controls -->
+                <div class="control-group">
+                    <label>Sound Effects</label>
+                    <div class="sound-controls">
+                        <button class="btn btn-warning btn-large" id="hornBtn">🔊 HORN</button>
+                        <button class="btn btn-info" id="bellOnBtn">🔔 Bell ON</button>
+                        <button class="btn btn-info" id="bellOffBtn">🔕 Bell OFF</button>
+                    </div>
+                </div>
+
+                <!-- Emergency Stop -->
+                <div class="control-group emergency">
+                    <button class="btn btn-danger btn-large" id="emergencyStopBtn">
+                        ⚠️ EMERGENCY STOP
+                    </button>
+                </div>
+            </div>
+
+            <div class="train-status" id="trainStatus">
+                <h3>Train Status</h3>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span class="status-label">Connected:</span>
+                        <span id="trainConnected">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Current Speed:</span>
+                        <span id="trainSpeed">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Direction:</span>
+                        <span id="trainDirection">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Section -->
+        <div class="section admin-section">
+            <details>
+                <summary>⚙️ Configuration</summary>
+                <div class="admin-content">
+                    <div class="config-item">
+                        <label for="queueTimeoutInput">Queue Timeout (seconds):</label>
+                        <input type="number" id="queueTimeoutInput" min="10" max="3600" value="300">
+                        <button class="btn btn-small" id="updateConfigBtn">Update</button>
+                    </div>
+                    <div class="config-info">
+                        <p><strong>Note:</strong> If only one person is in the queue, they can control the train indefinitely.</p>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "{{ api_url }}";
+    </script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
