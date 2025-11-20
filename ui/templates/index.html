@@ -3,13 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LionChief Train Controller</title>
+    <title>LionChief Train Controller - {{ theme.name }}</title>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        :root {
+            --theme-primary: {{ theme.colors.primary }};
+            --theme-secondary: {{ theme.colors.secondary }};
+            --theme-accent: {{ theme.colors.accent }};
+            --theme-background: {{ theme.colors.background }};
+            --theme-text: {{ theme.colors.text }};
+            --theme-button: {{ theme.colors.button }};
+            --theme-button-hover: {{ theme.colors.button_hover }};
+        }
+    </style>
 </head>
-<body>
+<body data-theme="{{ theme_id }}">
     <div class="container">
         <header>
-            <h1>🚂 LionChief Train Controller</h1>
+            <h1>🚂 {{ theme.name }}</h1>
             <div class="connection-status" id="connectionStatus">
                 <span class="status-dot"></span>
                 <span class="status-text">Connecting...</span>

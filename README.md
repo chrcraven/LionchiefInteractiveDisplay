@@ -9,7 +9,9 @@ A queue-based train control system that allows multiple users to share control o
 - **Real-time Updates**: WebSocket-based live queue status and control updates
 - **Full Train Control**: Speed, direction, horn, and bell controls
 - **Emergency Stop**: Anyone in the queue can trigger an emergency stop
-- **Raspberry Pi Ready**: Designed to run on Raspberry Pi with Docker
+- **Themed UI**: 25+ beautiful themes matching popular Lionel train sets
+- **Easy Admin**: Hidden admin page for theme selection (no password required)
+- **Raspberry Pi Ready**: Automated setup script with systemd service configuration
 - **Mock Mode**: Test without a physical train using mock mode
 
 ## Architecture
@@ -110,6 +112,92 @@ scan on
 - **Configure Queue Time**: Adjust the time limit per user in the configuration section
 - **Monitor Status**: View real-time queue and train status
 - **Emergency Stop**: Available to all users in the queue
+- **Theme Selection**: Access the hidden admin page at `/secret-admin-theme-selector` to change the UI theme
+
+## Theming System
+
+The UI includes a comprehensive theming system with 25+ pre-configured themes matching popular Lionel train sets!
+
+### Available Theme Categories
+
+- **Christmas/Holiday**: Polar Express, Winter Wonderland, Christmas Celebration, and more
+- **Licensed Characters**: Hogwarts Express, Disney Frozen, Toy Story, Willy Wonka, and more
+- **Railroad Companies**: Santa Fe, Union Pacific, Pennsylvania, CSX, and more
+- **Specialty**: Area 51 UFO, John Deere, US Army, Halloween Fast Fright, and more
+- **Classic**: Lionel Lines, Prairie Freight
+
+### Changing Themes
+
+1. Navigate to: `http://your-pi-address:5000/secret-admin-theme-selector`
+2. Browse themes organized by category
+3. Click on any theme card to apply it immediately
+4. The theme persists across sessions
+
+Each theme includes carefully selected colors matching the train set's livery and design.
+
+## Raspberry Pi Setup (Without Docker)
+
+For a production Raspberry Pi deployment without Docker, use the automated setup script:
+
+```bash
+cd api
+./setup_rpi.sh
+```
+
+This script will:
+- Install all system dependencies (Python, Bluetooth, etc.)
+- Create a Python virtual environment
+- Install all Python packages and pyLionChief
+- Configure the API as a systemd service
+- Set up auto-start on boot
+
+### Manual Raspberry Pi Setup
+
+If you prefer manual setup:
+
+```bash
+# Install dependencies
+sudo apt-get update
+sudo apt-get install -y python3 python3-pip python3-venv git bluez bluetooth libbluetooth-dev libglib2.0-dev
+
+# Add user to bluetooth group
+sudo usermod -aG bluetooth $USER
+
+# Create virtual environment
+cd api
+python3 -m venv venv
+source venv/bin/activate
+
+# Install packages
+pip install -r requirements.txt
+pip install git+https://github.com/chrcraven/pyLionChief.git
+
+# Copy and configure service file
+sudo cp lionchief-api.service.template /etc/systemd/system/lionchief-api.service
+# Edit the service file to set correct paths and username
+sudo nano /etc/systemd/system/lionchief-api.service
+
+# Enable and start service
+sudo systemctl daemon-reload
+sudo systemctl enable lionchief-api.service
+sudo systemctl start lionchief-api.service
+```
+
+### Service Management
+
+```bash
+# View logs
+sudo journalctl -u lionchief-api.service -f
+
+# Restart service
+sudo systemctl restart lionchief-api.service
+
+# Stop service
+sudo systemctl stop lionchief-api.service
+
+# Check status
+sudo systemctl status lionchief-api.service
+```
 
 ## API Endpoints
 

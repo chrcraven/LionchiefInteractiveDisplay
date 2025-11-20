@@ -26,6 +26,9 @@ wheels/
 # Environment
 .env
 
+# Runtime files
+current_theme.json
+
 # IDE
 .vscode/
 .idea/
