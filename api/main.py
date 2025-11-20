@@ -261,6 +261,65 @@ async def get_train_status():
     return train_controller.get_status()
 
 
+@app.get("/train/scan")
+async def scan_for_trains(duration: int = 10):
+    """
+    Scan for nearby LionChief trains.
+
+    Args:
+        duration: Scan duration in seconds (default 10, max 30)
+    """
+    if not train_controller:
+        raise HTTPException(status_code=500, detail="Train controller not initialized")
+
+    if duration < 5 or duration > 30:
+        raise HTTPException(status_code=400, detail="Duration must be between 5 and 30 seconds")
+
+    if train_controller.is_scanning():
+        raise HTTPException(status_code=409, detail="Scan already in progress")
+
+    discovered = await train_controller.scan_for_trains(scan_duration=duration)
+
+    return {
+        "success": True,
+        "trains": discovered,
+        "count": len(discovered)
+    }
+
+
+@app.get("/train/discovered")
+async def get_discovered_trains():
+    """Get list of previously discovered trains."""
+    if not train_controller:
+        raise HTTPException(status_code=500, detail="Train controller not initialized")
+
+    trains = train_controller.get_discovered_trains()
+
+    return {
+        "trains": trains,
+        "count": len(trains),
+        "scanning": train_controller.is_scanning()
+    }
+
+
+class ConnectTrainRequest(BaseModel):
+    address: str
+
+
+@app.post("/train/connect")
+async def connect_train(request: ConnectTrainRequest):
+    """Connect to a specific train by Bluetooth address."""
+    if not train_controller:
+        raise HTTPException(status_code=500, detail="Train controller not initialized")
+
+    result = await train_controller.connect_to_train(request.address)
+
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["message"])
+
+    return result
+
+
 @app.get("/config")
 async def get_config():
     """Get current configuration."""

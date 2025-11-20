@@ -4,6 +4,7 @@ A queue-based train control system that allows multiple users to share control o
 
 ## Features
 
+- **Automatic Train Discovery**: No configuration needed! System automatically finds and connects to nearby LionChief trains
 - **Queue Management**: Fair FIFO queue system with configurable time slots
 - **Single User Infinite Mode**: If only one person is in the queue, they can control the train indefinitely
 - **Real-time Updates**: WebSocket-based live queue status and control updates
@@ -42,11 +43,15 @@ cd LionchiefInteractiveDisplay
 
 ```bash
 cp .env.example .env
-# Edit .env and set your train's Bluetooth address
+# Edit .env and set your train's Bluetooth address (optional)
 nano .env
 ```
 
-Set `TRAIN_ADDRESS` to your train's Bluetooth MAC address (e.g., `AA:BB:CC:DD:EE:FF`). Leave empty to run in mock mode.
+**Automatic Train Discovery**: If you don't set `TRAIN_ADDRESS`, the system will automatically scan for nearby LionChief trains and connect to the first one found. This makes setup much easier!
+
+**Manual Configuration**: Set `TRAIN_ADDRESS` to your train's Bluetooth MAC address (e.g., `AA:BB:CC:DD:EE:FF`) if you have multiple trains or want to connect to a specific one.
+
+**Mock Mode**: The system runs in mock mode if no trains are discovered and no address is configured.
 
 ### 3. Build and Run with Docker
 
@@ -81,7 +86,9 @@ TRAIN_ALLOW_INFINITE_SINGLE=true
 API_URL=http://localhost:8000
 ```
 
-### Finding Your Train's Bluetooth Address
+### Finding Your Train's Bluetooth Address (Optional)
+
+The system automatically discovers trains, but if you want to manually specify a train:
 
 On Raspberry Pi:
 
@@ -90,6 +97,11 @@ sudo bluetoothctl
 scan on
 # Look for your LionChief train in the list
 # Note the MAC address
+```
+
+Or use the API's scan endpoint:
+```bash
+curl http://localhost:8000/train/scan?duration=10
 ```
 
 ## Usage
@@ -213,6 +225,11 @@ sudo systemctl status lionchief-api.service
 - `POST /train/bell` - Control bell (on/off)
 - `POST /train/emergency-stop` - Emergency stop
 - `GET /train/status` - Get train status
+
+### Train Discovery
+- `GET /train/scan?duration=10` - Scan for nearby LionChief trains (duration in seconds, 5-30)
+- `GET /train/discovered` - Get list of previously discovered trains
+- `POST /train/connect` - Connect to a specific train by Bluetooth address
 
 ### Configuration
 - `GET /config` - Get current configuration

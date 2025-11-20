@@ -1,6 +1,6 @@
 """Train controller interface using pyLionChief."""
 import asyncio
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,8 @@ class TrainController:
         self._lock = asyncio.Lock()
         self._current_speed = 0
         self._current_direction = "forward"
+        self._discovered_trains: List[Dict] = []
+        self._scanning = False
 
     async def initialize(self):
         """Initialize connection to the train."""
@@ -38,8 +40,18 @@ class TrainController:
                 self.connected = True
                 logger.info("Train connected successfully")
             else:
-                logger.warning("No train address configured, running in mock mode")
-                self.train = None
+                logger.info("No train address configured, attempting to discover trains...")
+                # Try to discover trains
+                discovered = await self.scan_for_trains()
+
+                if discovered:
+                    # Auto-connect to the first discovered train
+                    first_train = discovered[0]
+                    logger.info(f"Auto-connecting to discovered train: {first_train['name']} ({first_train['address']})")
+                    await self.connect_to_train(first_train['address'])
+                else:
+                    logger.warning("No trains discovered, running in mock mode")
+                    self.train = None
 
         except Exception as e:
             logger.error(f"Error initializing train: {e}")
@@ -160,8 +172,126 @@ class TrainController:
             "connected": self.connected,
             "speed": self._current_speed,
             "direction": self._current_direction,
-            "mock_mode": self.train is None
+            "mock_mode": self.train is None,
+            "train_address": self.train_address,
+            "discovered_trains": len(self._discovered_trains)
         }
+
+    async def scan_for_trains(self, scan_duration: int = 10) -> List[Dict]:
+        """
+        Scan for nearby LionChief trains using pyLionChief's discovery.
+
+        Args:
+            scan_duration: How long to scan in seconds (default 10)
+
+        Returns:
+            List of discovered trains with name and address
+        """
+        if self._scanning:
+            logger.warning("Scan already in progress")
+            return self._discovered_trains
+
+        self._scanning = True
+        self._discovered_trains = []
+
+        try:
+            # Import pyLionChief discovery
+            try:
+                from pyLionChief import discover_trains
+            except ImportError:
+                try:
+                    from pyLionChief.pyLionChief import discover_trains
+                except ImportError:
+                    logger.error("pyLionChief not available for train discovery")
+                    self._scanning = False
+                    return []
+
+            logger.info(f"Starting train discovery scan for {scan_duration} seconds...")
+
+            # Use pyLionChief's discover_trains function
+            discovered_devices = await asyncio.to_thread(discover_trains, scan_duration)
+
+            # Convert to our format
+            for device in discovered_devices:
+                # pyLionChief returns devices with 'address' and 'name' keys
+                train_info = {
+                    "address": device.get('address', device.get('addr', 'Unknown')),
+                    "name": device.get('name', 'LionChief Train'),
+                    "type": "LionChief Train"
+                }
+                self._discovered_trains.append(train_info)
+                logger.info(f"Discovered train: {train_info['name']} ({train_info['address']})")
+
+            if not self._discovered_trains:
+                logger.warning("No LionChief trains found during scan")
+            else:
+                logger.info(f"Found {len(self._discovered_trains)} train(s)")
+
+        except Exception as e:
+            logger.error(f"Error during train scanning: {e}")
+            logger.info("Train discovery failed - ensure Bluetooth is enabled and you have permissions")
+        finally:
+            self._scanning = False
+
+        return self._discovered_trains
+
+    def get_discovered_trains(self) -> List[Dict]:
+        """Get list of discovered trains."""
+        return self._discovered_trains
+
+    def is_scanning(self) -> bool:
+        """Check if currently scanning for trains."""
+        return self._scanning
+
+    async def connect_to_train(self, address: str) -> Dict:
+        """
+        Connect to a specific train by address.
+
+        Args:
+            address: Bluetooth MAC address of the train
+
+        Returns:
+            Dict with success status and message
+        """
+        async with self._lock:
+            try:
+                # Disconnect from current train if connected
+                if self.connected:
+                    await self.disconnect()
+
+                # Import pyLionChief
+                try:
+                    from pyLionChief import LionChiefEngine
+                except ImportError:
+                    try:
+                        from pyLionChief.pyLionChief import LionChiefEngine
+                    except ImportError:
+                        return {
+                            "success": False,
+                            "message": "pyLionChief not available"
+                        }
+
+                logger.info(f"Connecting to train at {address}")
+                self.train_address = address
+                self.train = LionChiefEngine(address)
+                await asyncio.to_thread(self.train.connect)
+                self.connected = True
+                logger.info("Train connected successfully")
+
+                return {
+                    "success": True,
+                    "message": f"Connected to train at {address}",
+                    "address": address
+                }
+
+            except Exception as e:
+                logger.error(f"Error connecting to train: {e}")
+                self.train = None
+                self.connected = False
+                return {
+                    "success": False,
+                    "message": f"Failed to connect: {str(e)}"
+                }
 
     async def disconnect(self):
         """Disconnect from the train."""
