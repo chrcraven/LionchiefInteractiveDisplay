@@ -10,11 +10,275 @@ body {
     min-height: 100vh;
     padding: 20px;
     color: #333;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Background effects layer */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.15;
+}
+
+/* Snowfall effect for winter themes */
+body[data-theme="winter_wonderland"]::before,
+body[data-theme="polar_express"]::before,
+body[data-theme="christmas_celebration"]::before,
+body[data-theme="christmas_express"]::before,
+body[data-theme="north_pole_central"]::before,
+body[data-theme="peppermint_railroad"]::before {
+    background-image:
+        radial-gradient(circle, white 1px, transparent 1px),
+        radial-gradient(circle, white 1px, transparent 1px),
+        radial-gradient(circle, white 0.5px, transparent 0.5px);
+    background-size: 50px 50px, 80px 80px, 120px 120px;
+    background-position: 0 0, 40px 40px, 80px 80px;
+    animation: snowfall 20s linear infinite;
+}
+
+@keyframes snowfall {
+    0% {
+        background-position: 0 0, 40px 40px, 80px 80px;
+    }
+    100% {
+        background-position: 0 200px, 40px 240px, 80px 280px;
+    }
+}
+
+/* Starfield effect for space/dark themes */
+body[data-theme="area_51"]::before,
+body[data-theme="hogwarts_express"]::before {
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.8) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.6) 0.5px, transparent 0.5px);
+    background-size: 200px 200px, 150px 150px;
+    background-position: 0 0, 100px 100px;
+    animation: starTwinkle 3s ease-in-out infinite alternate;
+}
+
+@keyframes starTwinkle {
+    0% {
+        opacity: 0.1;
+    }
+    100% {
+        opacity: 0.2;
+    }
+}
+
+/* Railroad track pattern for railroad themes */
+body[data-theme="santa_fe"]::before,
+body[data-theme="union_pacific"]::before,
+body[data-theme="pennsylvania"]::before,
+body[data-theme="csx_spirit"]::before,
+body[data-theme="cpkc"]::before,
+body[data-theme="texas_special"]::before,
+body[data-theme="prairie_freight"]::before {
+    background-image:
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 15px,
+            rgba(255, 255, 255, 0.1) 15px,
+            rgba(255, 255, 255, 0.1) 17px
+        );
+    background-size: 100px 100%;
+}
+
+/* Sparkle effect for magical/licensed themes */
+body[data-theme="frozen_olaf"]::before,
+body[data-theme="disney_100"]::before,
+body[data-theme="willy_wonka"]::before {
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.8) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255, 215, 0, 0.6) 1px, transparent 1px);
+    background-size: 100px 100px, 70px 70px;
+    background-position: 0 0, 50px 50px;
+    animation: sparkle 4s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% {
+        opacity: 0.1;
+    }
+    50% {
+        opacity: 0.25;
+    }
+}
+
+/* Halloween spooky effect */
+body[data-theme="fast_fright"]::before {
+    background-image:
+        radial-gradient(ellipse, rgba(255, 140, 0, 0.2) 0%, transparent 60%),
+        radial-gradient(ellipse, rgba(138, 43, 226, 0.2) 0%, transparent 60%);
+    background-size: 200px 200px, 250px 250px;
+    background-position: 0 0, 100px 100px;
+    animation: spookyGlow 5s ease-in-out infinite alternate;
+}
+
+@keyframes spookyGlow {
+    0% {
+        opacity: 0.1;
+    }
+    100% {
+        opacity: 0.3;
+    }
+}
+
+/* Graffiti spray paint effect */
+body[data-theme="graffiti"]::before {
+    background-image:
+        radial-gradient(ellipse, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse, rgba(16, 185, 129, 0.15) 0%, transparent 50%);
+    background-size: 150px 150px, 200px 200px, 180px 180px;
+    background-position: 0 0, 100px 100px, 50px 150px;
+    animation: graffiti 10s linear infinite;
+}
+
+@keyframes graffiti {
+    0% {
+        background-position: 0 0, 100px 100px, 50px 150px;
+    }
+    100% {
+        background-position: 200px 0, 300px 100px, 250px 150px;
+    }
+}
+
+/* Toy Story sky clouds */
+body[data-theme="toy_story"]::before {
+    background-image:
+        radial-gradient(ellipse 100px 50px, rgba(255, 255, 255, 0.2) 0%, transparent 70%),
+        radial-gradient(ellipse 80px 40px, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+    background-size: 300px 100px, 250px 80px;
+    background-position: 0 50px, 150px 100px;
+    animation: clouds 30s linear infinite;
+}
+
+@keyframes clouds {
+    0% {
+        background-position: -300px 50px, -150px 100px;
+    }
+    100% {
+        background-position: 100% 50px, calc(100% + 150px) 100px;
+    }
+}
+
+/* Thomas & Friends steam puffs */
+body[data-theme="thomas_friends"]::before {
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+    background-size: 60px 60px;
+    background-position: 0 80%;
+    animation: steamPuff 3s ease-out infinite;
+}
+
+@keyframes steamPuff {
+    0% {
+        background-position: 0 80%;
+        opacity: 0;
+    }
+    50% {
+        opacity: 0.15;
+    }
+    100% {
+        background-position: 0 20%;
+        opacity: 0;
+    }
+}
+
+/* Looney Tunes cartoon effect */
+body[data-theme="looney_tunes"]::before {
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 0, 0.2) 10px, transparent 10px),
+        radial-gradient(circle, rgba(255, 0, 0, 0.15) 8px, transparent 8px);
+    background-size: 120px 120px, 150px 150px;
+    background-position: 0 0, 60px 60px;
+    animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+/* US Army camouflage pattern */
+body[data-theme="us_army"]::before {
+    background-image:
+        linear-gradient(135deg, rgba(120, 113, 108, 0.1) 25%, transparent 25%),
+        linear-gradient(225deg, rgba(120, 113, 108, 0.1) 25%, transparent 25%),
+        linear-gradient(45deg, rgba(120, 113, 108, 0.1) 25%, transparent 25%),
+        linear-gradient(315deg, rgba(120, 113, 108, 0.1) 25%, transparent 25%);
+    background-size: 80px 80px;
+    background-position: 0 0, 0 40px, 40px -40px, -40px 0;
+}
+
+/* John Deere farmland rows */
+body[data-theme="john_deere"]::before {
+    background-image:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 20px,
+            rgba(22, 163, 74, 0.15) 20px,
+            rgba(22, 163, 74, 0.15) 22px
+        );
+}
+
+/* Anheuser Busch brewery bubbles */
+body[data-theme="anheuser_busch"]::before {
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.3) 3px, transparent 3px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.2) 2px, transparent 2px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.25) 4px, transparent 4px);
+    background-size: 100px 100px, 80px 80px, 120px 120px;
+    background-position: 0 0, 50px 50px, 30px 70px;
+    animation: bubbles 8s linear infinite;
+}
+
+@keyframes bubbles {
+    0% {
+        background-position: 0 0, 50px 50px, 30px 70px;
+    }
+    100% {
+        background-position: 0 -100px, 50px -50px, 30px -30px;
+    }
+}
+
+/* Lionel Lines classic pattern */
+body[data-theme="lionel_lines"]::before {
+    background-image:
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 35px,
+            rgba(102, 126, 234, 0.1) 35px,
+            rgba(102, 126, 234, 0.1) 37px
+        ),
+        repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 35px,
+            rgba(118, 75, 162, 0.1) 35px,
+            rgba(118, 75, 162, 0.1) 37px
+        );
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
+    position: relative;
+    z-index: 1;
 }
 
 header {
