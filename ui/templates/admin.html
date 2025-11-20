@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Panel - LionChief</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-top: 10px;
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .control-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .control-description {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #10b981;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .config-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .config-item label {
+            flex: 0 0 auto;
+            font-weight: 600;
+        }
+
+        .config-item input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            color: #1e40af;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .password-field {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .password-field input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .message.error {
+            background: #ef4444;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6b7280;
+            transition: all 0.3s;
+        }
+
+        .nav-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Admin Control Panel</h1>
+            <p class="subtitle">Configure queue settings and train controls</p>
+            <a href="/" class="back-link">← Back to Train Control</a>
+        </header>
+
+        <div class="section">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchTab('queue')">Queue Settings</button>
+                <button class="nav-tab" onclick="switchTab('controls')">Train Controls</button>
+                <button class="nav-tab" onclick="switchTab('theme')">Theme</button>
+            </div>
+
+            <!-- Queue Settings Tab -->
+            <div id="queue-tab" class="tab-content active">
+                <h2>Queue Configuration</h2>
+                <div class="alert alert-info">
+                    <strong>Note:</strong> If only one person is in the queue, they can control the train indefinitely regardless of timeout setting.
+                </div>
+
+                <div class="config-item">
+                    <label for="queueTimeoutInput">Queue Timeout (seconds):</label>
+                    <input type="number" id="queueTimeoutInput" min="10" max="3600" value="300">
+                    <button class="btn btn-primary" onclick="updateQueueTimeout()">Update</button>
+                </div>
+            </div>
+
+            <!-- Train Controls Tab -->
+            <div id="controls-tab" class="tab-content">
+                <h2>Available Train Controls</h2>
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> Disabling controls will prevent users from accessing them. An admin password is required to change these settings.
+                </div>
+
+                <div class="password-field">
+                    <input type="password" id="adminPassword" placeholder="Admin Password (leave empty if not set)">
+                </div>
+
+                <div class="control-item">
+                    <div>
+                        <div class="control-label">Speed Control</div>
+                        <div class="control-description">Allow users to control train speed</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="control-speed" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-item">
+                    <div>
+                        <div class="control-label">Direction Control</div>
+                        <div class="control-description">Allow users to change train direction</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="control-direction" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-item">
+                    <div>
+                        <div class="control-label">Horn Control</div>
+                        <div class="control-description">Allow users to blow the train horn</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="control-horn" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-item">
+                    <div>
+                        <div class="control-label">Bell Control</div>
+                        <div class="control-description">Allow users to ring the train bell</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="control-bell" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-item">
+                    <div>
+                        <div class="control-label">Emergency Stop - All Users</div>
+                        <div class="control-description">Allow anyone in queue to trigger emergency stop (default: only current controller + admin)</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="control-emergency_stop_all">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <button class="btn btn-success" onclick="saveControls()">Save Control Settings</button>
+            </div>
+
+            <!-- Theme Tab -->
+            <div id="theme-tab" class="tab-content">
+                <h2>Theme Selection</h2>
+                <div class="alert alert-info">
+                    <strong>Tip:</strong> Use the <a href="/secret-admin-theme-selector" style="color: #1e40af; font-weight: 600;">dedicated theme selector page</a> for a better experience with visual previews.
+                </div>
+                <p>Visit the theme selector page to choose from 25+ pre-configured themes matching popular Lionel train sets.</p>
+                <br>
+                <a href="/secret-admin-theme-selector" class="btn btn-primary">Open Theme Selector</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "{{ api_url }}";
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+
+            // Load data for the tab
+            if (tabName === 'queue') {
+                loadQueueConfig();
+            } else if (tabName === 'controls') {
+                loadControls();
+            }
+        }
+
+        // Show message
+        function showMessage(text, type = 'success') {
+            const message = document.createElement('div');
+            message.className = 'message' + (type === 'error' ? ' error' : '');
+            message.textContent = text;
+            document.body.appendChild(message);
+
+            setTimeout(() => {
+                document.body.removeChild(message);
+            }, 3000);
+        }
+
+        // Load queue configuration
+        async function loadQueueConfig() {
+            try {
+                const response = await fetch(API_URL + '/config');
+                const data = await response.json();
+                document.getElementById('queueTimeoutInput').value = data.queue_timeout;
+            } catch (error) {
+                console.error('Failed to load queue config:', error);
+            }
+        }
+
+        // Update queue timeout
+        async function updateQueueTimeout() {
+            const timeout = parseInt(document.getElementById('queueTimeoutInput').value);
+
+            if (timeout < 10 || timeout > 3600) {
+                showMessage('Queue timeout must be between 10 and 3600 seconds', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ queue_timeout: timeout })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Queue timeout updated successfully');
+                } else {
+                    showMessage('Failed to update queue timeout', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to update queue timeout:', error);
+                showMessage('Error updating queue timeout', 'error');
+            }
+        }
+
+        // Load control settings
+        async function loadControls() {
+            try {
+                const response = await fetch(API_URL + '/controls');
+                const data = await response.json();
+
+                // Update checkboxes
+                for (const [key, value] of Object.entries(data.controls)) {
+                    const checkbox = document.getElementById('control-' + key);
+                    if (checkbox) {
+                        checkbox.checked = value;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load controls:', error);
+            }
+        }
+
+        // Save control settings
+        async function saveControls() {
+            const password = document.getElementById('adminPassword').value;
+
+            const controls = {
+                speed: document.getElementById('control-speed').checked,
+                direction: document.getElementById('control-direction').checked,
+                horn: document.getElementById('control-horn').checked,
+                bell: document.getElementById('control-bell').checked,
+                emergency_stop_all: document.getElementById('control-emergency_stop_all').checked
+            };
+
+            try {
+                const response = await fetch(API_URL + '/controls', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        admin_password: password,
+                        controls: controls
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showMessage('Control settings saved successfully');
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to save control settings', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to save controls:', error);
+                showMessage('Error saving control settings', 'error');
+            }
+        }
+
+        // Initialize
+        loadQueueConfig();
+        loadControls();
+    </script>
+</body>
+</html>

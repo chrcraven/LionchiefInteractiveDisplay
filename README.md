@@ -121,10 +121,26 @@ curl http://localhost:8000/train/scan?duration=10
 
 ### For Administrators
 
-- **Configure Queue Time**: Adjust the time limit per user in the configuration section
-- **Monitor Status**: View real-time queue and train status
-- **Emergency Stop**: Available to all users in the queue
-- **Theme Selection**: Access the hidden admin page at `/secret-admin-theme-selector` to change the UI theme
+**Admin Control Panel**: Navigate to `http://your-pi-address:5000/secret-admin` for full configuration
+
+- **Queue Settings**:
+  - Adjust time limit per user (10-3600 seconds)
+  - Configure single-user infinite mode
+
+- **Train Controls Configuration**:
+  - Enable/disable individual controls (speed, direction, horn, bell)
+  - Configure emergency stop access (current controller only, or all users)
+  - Requires admin password for changes (set via `ADMIN_PASSWORD` env variable)
+
+- **Theme Selection**:
+  - Access at `/secret-admin-theme-selector`
+  - Choose from 25+ pre-configured themes
+  - Themes match popular Lionel train sets
+
+- **Security**:
+  - Emergency stop restricted to current controller + admin by default
+  - Admin password protects control configuration
+  - Leave `ADMIN_PASSWORD` empty for no password protection
 
 ## Theming System
 
@@ -233,7 +249,11 @@ sudo systemctl status lionchief-api.service
 
 ### Configuration
 - `GET /config` - Get current configuration
-- `POST /config` - Update configuration
+- `POST /config` - Update queue configuration
+
+### Control Settings
+- `GET /controls` - Get available train controls and their enabled state
+- `POST /controls` - Update control settings (requires admin password)
 
 ### WebSocket
 - `WS /ws` - Real-time queue and train updates

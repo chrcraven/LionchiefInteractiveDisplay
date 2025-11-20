@@ -50,6 +50,12 @@ def serve_static(path):
     return send_from_directory("static", path)
 
 
+@app.route("/secret-admin")
+def admin():
+    """Hidden admin page for configuration."""
+    return render_template("admin.html", api_url=API_URL)
+
+
 @app.route("/secret-admin-theme-selector")
 def admin_theme():
     """Hidden admin page for theme selection."""

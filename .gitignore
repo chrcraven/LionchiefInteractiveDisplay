@@ -28,6 +28,7 @@ wheels/
 
 # Runtime files
 current_theme.json
+controls_config.json
 
 # IDE
 .vscode/

@@ -12,6 +12,7 @@ import uvicorn
 from api.config import config
 from api.queue_manager import QueueManager
 from api.train_controller import TrainController
+from api.controls_config import controls_config
 
 # Configure logging
 logging.basicConfig(
@@ -102,10 +103,16 @@ class TrainBellRequest(BaseModel):
 
 class EmergencyStopRequest(BaseModel):
     user_id: str
+    admin_password: Optional[str] = None
 
 
 class ConfigUpdateRequest(BaseModel):
     queue_timeout: Optional[int] = None
+
+
+class ControlsUpdateRequest(BaseModel):
+    admin_password: str
+    controls: dict
 
 
 # WebSocket broadcast function
@@ -176,6 +183,10 @@ async def set_train_speed(request: TrainSpeedRequest):
     if not queue_manager or not train_controller:
         raise HTTPException(status_code=500, detail="System not initialized")
 
+    # Check if speed control is enabled
+    if not controls_config.is_enabled("speed"):
+        raise HTTPException(status_code=403, detail="Speed control is disabled")
+
     # Check if user has control
     if not queue_manager.has_control(request.user_id):
         raise HTTPException(status_code=403, detail="You do not have control")
@@ -192,6 +203,10 @@ async def set_train_direction(request: TrainDirectionRequest):
     """Set train direction."""
     if not queue_manager or not train_controller:
         raise HTTPException(status_code=500, detail="System not initialized")
+
+    # Check if direction control is enabled
+    if not controls_config.is_enabled("direction"):
+        raise HTTPException(status_code=403, detail="Direction control is disabled")
 
     # Check if user has control
     if not queue_manager.has_control(request.user_id):
@@ -210,6 +225,10 @@ async def blow_horn(request: TrainHornRequest):
     if not queue_manager or not train_controller:
         raise HTTPException(status_code=500, detail="System not initialized")
 
+    # Check if horn control is enabled
+    if not controls_config.is_enabled("horn"):
+        raise HTTPException(status_code=403, detail="Horn control is disabled")
+
     # Check if user has control
     if not queue_manager.has_control(request.user_id):
         raise HTTPException(status_code=403, detail="You do not have control")
@@ -226,6 +245,10 @@ async def control_bell(request: TrainBellRequest):
     """Control the train bell."""
     if not queue_manager or not train_controller:
         raise HTTPException(status_code=500, detail="System not initialized")
+
+    # Check if bell control is enabled
+    if not controls_config.is_enabled("bell"):
+        raise HTTPException(status_code=403, detail="Bell control is disabled")
 
     # Check if user has control
     if not queue_manager.has_control(request.user_id):
@@ -244,7 +267,21 @@ async def emergency_stop(request: EmergencyStopRequest):
     if not queue_manager or not train_controller:
         raise HTTPException(status_code=500, detail="System not initialized")
 
-    # Emergency stop can be triggered by anyone in the queue
+    # Check if emergency stop is available to all users or just current controller + admin
+    if controls_config.is_enabled("emergency_stop_all"):
+        # Anyone in queue can trigger emergency stop
+        pass
+    else:
+        # Only current controller or admin can trigger emergency stop
+        has_control = queue_manager.has_control(request.user_id)
+        is_admin = controls_config.is_admin(request.admin_password or "")
+
+        if not has_control and not is_admin:
+            raise HTTPException(
+                status_code=403,
+                detail="Emergency stop can only be triggered by the current controller or admin"
+            )
+
     result = await train_controller.emergency_stop()
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])
@@ -346,6 +383,32 @@ async def update_config(request: ConfigUpdateRequest):
         await queue_manager.update_timeout(request.queue_timeout)
 
     return {"success": True, "config": await get_config()}
+
+
+@app.get("/controls")
+async def get_controls():
+    """Get current control settings."""
+    return {
+        "controls": controls_config.get_all_controls(),
+        "requires_admin_password": bool(controls_config.admin_password)
+    }
+
+
+@app.post("/controls")
+async def update_controls(request: ControlsUpdateRequest):
+    """Update control settings (requires admin password)."""
+    # Verify admin password
+    if not controls_config.is_admin(request.admin_password):
+        raise HTTPException(status_code=403, detail="Invalid admin password")
+
+    # Update controls
+    if controls_config.update_controls(request.controls):
+        return {
+            "success": True,
+            "controls": controls_config.get_all_controls()
+        }
+    else:
+        raise HTTPException(status_code=500, detail="Failed to save control settings")
 
 
 @app.websocket("/ws")
