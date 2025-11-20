@@ -486,6 +486,158 @@
                     <input type="password" id="schedulerAdminPassword" placeholder="Admin Password (required for changes)">
                 </div>
 
+                <!-- Scripting Language Documentation -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 10px; cursor: pointer;" onclick="toggleScriptDocs()">
+                        📖 Scripting Language Reference
+                        <span id="scriptDocsToggle" style="font-size: 14px; color: #6b7280;"> (click to expand)</span>
+                    </h3>
+                    <div id="scriptDocs" style="display: none; background: #f9fafb; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <h4 style="margin-top: 0; color: #667eea;">Train Control Commands</h4>
+
+                        <div style="margin-bottom: 20px;">
+                            <h5 style="color: #374151; margin-bottom: 10px;">Movement Commands</h5>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">speed &lt;0-31&gt;</td>
+                                    <td style="padding: 8px; color: #6b7280;">Set train speed (0=stop, 31=maximum)</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">forward</td>
+                                    <td style="padding: 8px; color: #6b7280;">Set direction to forward</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">reverse</td>
+                                    <td style="padding: 8px; color: #6b7280;">Set direction to reverse</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">toggle</td>
+                                    <td style="padding: 8px; color: #6b7280;">Toggle direction (forward ↔ reverse)</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <h5 style="color: #374151; margin-bottom: 10px;">Sound Commands</h5>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">horn</td>
+                                    <td style="padding: 8px; color: #6b7280;">Blow the train horn</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">bell on</td>
+                                    <td style="padding: 8px; color: #6b7280;">Turn bell on</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">bell off</td>
+                                    <td style="padding: 8px; color: #6b7280;">Turn bell off</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <h5 style="color: #374151; margin-bottom: 10px;">Control Flow</h5>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">wait &lt;seconds&gt;</td>
+                                    <td style="padding: 8px; color: #6b7280;">Pause execution (supports decimals, e.g., 0.5)</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">repeat &lt;n&gt; times</td>
+                                    <td style="padding: 8px; color: #6b7280;">Start a loop that repeats n times</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">end</td>
+                                    <td style="padding: 8px; color: #6b7280;">End a repeat loop</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;"># comment</td>
+                                    <td style="padding: 8px; color: #6b7280;">Comments are ignored (must start line)</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <h4 style="color: #667eea; margin-bottom: 10px;">Example Scripts</h4>
+
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: #374151;">Simple Demonstration:</strong>
+                            <pre style="background: white; padding: 10px; border-radius: 5px; overflow-x: auto; margin-top: 5px;"><code># Start from stop
+speed 0
+bell on
+wait 2
+
+# Accelerate forward
+forward
+speed 10
+wait 3
+speed 20
+wait 3
+
+# Horn and slow down
+horn
+wait 1
+speed 10
+wait 2
+speed 0
+bell off</code></pre>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: #374151;">Back and Forth Pattern:</strong>
+                            <pre style="background: white; padding: 10px; border-radius: 5px; overflow-x: auto; margin-top: 5px;"><code># Repeat pattern 3 times
+repeat 3 times
+    forward
+    speed 15
+    wait 5
+    speed 0
+    wait 1
+
+    reverse
+    speed 15
+    wait 5
+    speed 0
+    wait 1
+end
+
+# Final horn
+horn
+wait 0.5
+horn</code></pre>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: #374151;">Nested Loops:</strong>
+                            <pre style="background: white; padding: 10px; border-radius: 5px; overflow-x: auto; margin-top: 5px;"><code># Complex pattern with nested loops
+repeat 2 times
+    forward
+    speed 20
+
+    # Horn sequence
+    repeat 3 times
+        horn
+        wait 0.5
+    end
+
+    wait 3
+    speed 0
+    wait 1
+end</code></pre>
+                        </div>
+
+                        <div style="background: #fef3c7; padding: 10px; border-radius: 5px; border-left: 4px solid #f59e0b; margin-top: 15px;">
+                            <strong style="color: #92400e;">💡 Tips:</strong>
+                            <ul style="margin: 5px 0 0 20px; color: #92400e;">
+                                <li>Use comments (#) to document your scripts</li>
+                                <li>Scripts are validated before saving</li>
+                                <li>Test scripts with "Run Now" before scheduling</li>
+                                <li>One command per line</li>
+                                <li>Indentation is optional but improves readability</li>
+                                <li>All loops must have matching "end" statements</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Create/Edit Job Form -->
                 <div style="margin-bottom: 30px;">
                     <h3 id="jobFormTitle" style="margin-bottom: 15px;">Create New Job</h3>
@@ -1130,6 +1282,19 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             } catch (error) {
                 console.error('Failed to reset profanity filter:', error);
                 showMessage('Error resetting profanity filter', 'error');
+            }
+        }
+
+        // Toggle script documentation
+        function toggleScriptDocs() {
+            const docs = document.getElementById('scriptDocs');
+            const toggle = document.getElementById('scriptDocsToggle');
+            if (docs.style.display === 'none') {
+                docs.style.display = 'block';
+                toggle.textContent = ' (click to collapse)';
+            } else {
+                docs.style.display = 'none';
+                toggle.textContent = ' (click to expand)';
             }
         }
 
