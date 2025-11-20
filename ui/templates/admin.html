@@ -275,6 +275,103 @@
         .tab-content.active {
             display: block;
         }
+
+        /* Analytics Styles */
+        .stat-card {
+            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .chart-label {
+            width: 120px;
+            font-weight: 600;
+            color: #374151;
+            text-transform: capitalize;
+        }
+
+        .chart-bar-outer {
+            flex: 1;
+            height: 30px;
+            background: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chart-bar-inner {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+        }
+
+        .chart-bar-value {
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .stats-list {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 8px;
+        }
+
+        .stats-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .stats-item-label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .stats-item-value {
+            color: #667eea;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -289,6 +386,7 @@
             <div class="nav-tabs">
                 <button class="nav-tab active" onclick="switchTab('queue')">Queue Settings</button>
                 <button class="nav-tab" onclick="switchTab('controls')">Train Controls</button>
+                <button class="nav-tab" onclick="switchTab('analytics')">Analytics</button>
                 <button class="nav-tab" onclick="switchTab('theme')">Theme</button>
             </div>
 
@@ -375,6 +473,62 @@
                 <button class="btn btn-success" onclick="saveControls()">Save Control Settings</button>
             </div>
 
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content">
+                <h2>Usage Analytics</h2>
+
+                <!-- Stats Overview -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Sessions</div>
+                        <div class="stat-value" id="stat-total-sessions">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Unique Users</div>
+                        <div class="stat-value" id="stat-unique-users">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Wait Time</div>
+                        <div class="stat-value" id="stat-avg-wait">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Session Time</div>
+                        <div class="stat-value" id="stat-avg-session">-</div>
+                    </div>
+                </div>
+
+                <!-- Control Usage Breakdown -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Control Usage Breakdown</h3>
+                    <div id="control-usage-chart" class="chart-container"></div>
+                </div>
+
+                <!-- Peak Hours -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Peak Hours (Last 7 Days)</h3>
+                    <div id="peak-hours-list" class="stats-list"></div>
+                </div>
+
+                <!-- Top Users -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Top Users</h3>
+                    <div id="top-users-list" class="stats-list"></div>
+                </div>
+
+                <!-- Recent Sessions -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Recent Sessions</h3>
+                    <div id="recent-sessions-list" class="stats-list"></div>
+                </div>
+
+                <!-- Data Management -->
+                <div>
+                    <h3 style="margin-bottom: 15px;">Data Management</h3>
+                    <p style="color: #6b7280; margin-bottom: 15px;">Clear old analytics data to free up space. This action cannot be undone.</p>
+                    <button class="btn btn-secondary" onclick="cleanupAnalytics(90)">Clear Data Older Than 90 Days</button>
+                </div>
+            </div>
+
             <!-- Theme Tab -->
             <div id="theme-tab" class="tab-content">
                 <h2>Theme Selection</h2>
@@ -410,6 +564,8 @@
                 loadQueueConfig();
             } else if (tabName === 'controls') {
                 loadControls();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
             }
         }
 
@@ -520,6 +676,208 @@
             } catch (error) {
                 console.error('Failed to save controls:', error);
                 showMessage('Error saving control settings', 'error');
+            }
+        }
+
+        // Analytics functions
+        async function loadAnalytics() {
+            try {
+                const response = await fetch(API_URL + '/analytics/stats');
+                const stats = await response.json();
+
+                // Update stats cards
+                document.getElementById('stat-total-sessions').textContent = stats.total_sessions || 0;
+                document.getElementById('stat-unique-users').textContent = stats.total_users || 0;
+                document.getElementById('stat-avg-wait').textContent = stats.avg_wait_time ?
+                    formatTime(stats.avg_wait_time) : '0s';
+                document.getElementById('stat-avg-session').textContent = stats.avg_session_duration ?
+                    formatTime(stats.avg_session_duration) : '0s';
+
+                // Load control usage breakdown
+                await loadControlUsage();
+
+                // Display peak hours
+                displayPeakHours(stats.peak_hours || {});
+
+                // Display top users
+                displayTopUsers(stats.top_users || {});
+
+                // Display recent sessions
+                displayRecentSessions(stats.recent_sessions || []);
+
+            } catch (error) {
+                console.error('Failed to load analytics:', error);
+                showMessage('Error loading analytics', 'error');
+            }
+        }
+
+        async function loadControlUsage() {
+            try {
+                const response = await fetch(API_URL + '/analytics/controls');
+                const data = await response.json();
+
+                const container = document.getElementById('control-usage-chart');
+                container.innerHTML = '';
+
+                const breakdown = data.control_breakdown || {};
+                const entries = Object.entries(breakdown);
+
+                if (entries.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #6b7280;">No control usage data yet</p>';
+                    return;
+                }
+
+                entries.forEach(([control, info]) => {
+                    const bar = document.createElement('div');
+                    bar.className = 'chart-bar';
+
+                    const label = document.createElement('div');
+                    label.className = 'chart-label';
+                    label.textContent = control.replace('_', ' ');
+
+                    const barOuter = document.createElement('div');
+                    barOuter.className = 'chart-bar-outer';
+
+                    const barInner = document.createElement('div');
+                    barInner.className = 'chart-bar-inner';
+                    barInner.style.width = info.percentage + '%';
+
+                    const barValue = document.createElement('span');
+                    barValue.className = 'chart-bar-value';
+                    barValue.textContent = info.count + ' (' + info.percentage + '%)';
+
+                    barInner.appendChild(barValue);
+                    barOuter.appendChild(barInner);
+                    bar.appendChild(label);
+                    bar.appendChild(barOuter);
+                    container.appendChild(bar);
+                });
+            } catch (error) {
+                console.error('Failed to load control usage:', error);
+            }
+        }
+
+        function displayPeakHours(peakHours) {
+            const container = document.getElementById('peak-hours-list');
+            container.innerHTML = '';
+
+            const entries = Object.entries(peakHours);
+            if (entries.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280;">No peak hour data yet</p>';
+                return;
+            }
+
+            entries.forEach(([hour, count]) => {
+                const item = document.createElement('div');
+                item.className = 'stats-item';
+
+                const label = document.createElement('div');
+                label.className = 'stats-item-label';
+                const hourNum = parseInt(hour);
+                const period = hourNum >= 12 ? 'PM' : 'AM';
+                const displayHour = hourNum === 0 ? 12 : (hourNum > 12 ? hourNum - 12 : hourNum);
+                label.textContent = displayHour + ':00 ' + period;
+
+                const value = document.createElement('div');
+                value.className = 'stats-item-value';
+                value.textContent = count + ' sessions';
+
+                item.appendChild(label);
+                item.appendChild(value);
+                container.appendChild(item);
+            });
+        }
+
+        function displayTopUsers(topUsers) {
+            const container = document.getElementById('top-users-list');
+            container.innerHTML = '';
+
+            const entries = Object.entries(topUsers);
+            if (entries.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280;">No user data yet</p>';
+                return;
+            }
+
+            entries.forEach(([username, count]) => {
+                const item = document.createElement('div');
+                item.className = 'stats-item';
+
+                const label = document.createElement('div');
+                label.className = 'stats-item-label';
+                label.textContent = username;
+
+                const value = document.createElement('div');
+                value.className = 'stats-item-value';
+                value.textContent = count + ' sessions';
+
+                item.appendChild(label);
+                item.appendChild(value);
+                container.appendChild(item);
+            });
+        }
+
+        function displayRecentSessions(sessions) {
+            const container = document.getElementById('recent-sessions-list');
+            container.innerHTML = '';
+
+            if (sessions.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280;">No session data yet</p>';
+                return;
+            }
+
+            sessions.reverse().forEach(session => {
+                const item = document.createElement('div');
+                item.className = 'stats-item';
+
+                const label = document.createElement('div');
+                label.className = 'stats-item-label';
+                const date = new Date(session.session_start);
+                label.textContent = session.username + ' - ' + date.toLocaleDateString() + ' ' +
+                    date.toLocaleTimeString();
+
+                const value = document.createElement('div');
+                value.className = 'stats-item-value';
+                value.textContent = formatTime(session.session_duration);
+
+                item.appendChild(label);
+                item.appendChild(value);
+                container.appendChild(item);
+            });
+        }
+
+        async function cleanupAnalytics(days) {
+            if (!confirm(`Are you sure you want to delete analytics data older than ${days} days? This cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/analytics/cleanup?days=' + days, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`Removed ${data.removed_sessions} old session records`);
+                    loadAnalytics();
+                } else {
+                    showMessage('Failed to cleanup analytics', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to cleanup analytics:', error);
+                showMessage('Error cleaning up analytics', 'error');
+            }
+        }
+
+        function formatTime(seconds) {
+            if (seconds < 60) {
+                return Math.round(seconds) + 's';
+            } else if (seconds < 3600) {
+                return Math.round(seconds / 60) + 'm';
+            } else {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.round((seconds % 3600) / 60);
+                return hours + 'h ' + minutes + 'm';
             }
         }
 

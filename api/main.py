@@ -13,6 +13,7 @@ from api.config import config
 from api.queue_manager import QueueManager
 from api.train_controller import TrainController
 from api.controls_config import controls_config
+from api.analytics import analytics
 
 # Configure logging
 logging.basicConfig(
@@ -43,6 +44,15 @@ async def lifespan(app: FastAPI):
 
     # Register callback for queue changes
     queue_manager.register_callback(broadcast_queue_status)
+
+    # Register analytics callback
+    def analytics_callback(event_type: str, *args):
+        if event_type == "start_session":
+            analytics.start_session(*args)
+        elif event_type == "end_session":
+            analytics.end_session(*args)
+
+    queue_manager.register_analytics_callback(analytics_callback)
 
     logger.info("Train queue system started successfully")
 
@@ -195,6 +205,9 @@ async def set_train_speed(request: TrainSpeedRequest):
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])
 
+    # Track control usage
+    analytics.track_control_usage(request.user_id, "speed")
+
     return result
 
 
@@ -215,6 +228,9 @@ async def set_train_direction(request: TrainDirectionRequest):
     result = await train_controller.set_direction(request.direction)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])
+
+    # Track control usage
+    analytics.track_control_usage(request.user_id, "direction")
 
     return result
 
@@ -237,6 +253,9 @@ async def blow_horn(request: TrainHornRequest):
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])
 
+    # Track control usage
+    analytics.track_control_usage(request.user_id, "horn")
+
     return result
 
 
@@ -257,6 +276,9 @@ async def control_bell(request: TrainBellRequest):
     result = await train_controller.ring_bell(request.state)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])
+
+    # Track control usage
+    analytics.track_control_usage(request.user_id, "bell")
 
     return result
 
@@ -285,6 +307,9 @@ async def emergency_stop(request: EmergencyStopRequest):
     result = await train_controller.emergency_stop()
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])
+
+    # Track control usage
+    analytics.track_control_usage(request.user_id, "emergency_stop")
 
     return result
 
@@ -409,6 +434,47 @@ async def update_controls(request: ControlsUpdateRequest):
         }
     else:
         raise HTTPException(status_code=500, detail="Failed to save control settings")
+
+
+@app.get("/analytics/stats")
+async def get_analytics_stats(days: Optional[int] = None):
+    """Get analytics statistics."""
+    return analytics.get_statistics(days)
+
+
+@app.get("/analytics/hourly")
+async def get_hourly_distribution(days: int = 7):
+    """Get hourly session distribution."""
+    if days < 1 or days > 90:
+        raise HTTPException(status_code=400, detail="Days must be between 1 and 90")
+
+    return {
+        "hourly_distribution": analytics.get_hourly_distribution(days),
+        "days": days
+    }
+
+
+@app.get("/analytics/controls")
+async def get_control_breakdown():
+    """Get control usage breakdown."""
+    return {
+        "control_breakdown": analytics.get_control_breakdown(),
+        "total_usage": analytics.data["control_usage"]
+    }
+
+
+@app.delete("/analytics/cleanup")
+async def cleanup_old_analytics(days: int = 90):
+    """Clean up old analytics data."""
+    if days < 7 or days > 365:
+        raise HTTPException(status_code=400, detail="Days must be between 7 and 365")
+
+    removed = analytics.clear_old_data(days)
+    return {
+        "success": True,
+        "removed_sessions": removed,
+        "message": f"Removed {removed} sessions older than {days} days"
+    }
 
 
 @app.websocket("/ws")

@@ -246,13 +246,27 @@ function updateQueueDisplay(status) {
         if (userInQueue.time_remaining !== null) {
             if (userInQueue.time_remaining === -1) {
                 elements.timeRemaining.textContent = '∞ (Unlimited)';
+                elements.timeRemaining.className = 'info-value time-unlimited';
             } else {
                 const minutes = Math.floor(userInQueue.time_remaining / 60);
                 const seconds = Math.floor(userInQueue.time_remaining % 60);
                 elements.timeRemaining.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                // Apply color coding based on time remaining
+                elements.timeRemaining.className = 'info-value';
+                if (userInQueue.time_remaining > 120) {
+                    elements.timeRemaining.classList.add('time-safe');
+                } else if (userInQueue.time_remaining > 60) {
+                    elements.timeRemaining.classList.add('time-warning');
+                } else if (userInQueue.time_remaining > 30) {
+                    elements.timeRemaining.classList.add('time-danger');
+                } else {
+                    elements.timeRemaining.classList.add('time-critical');
+                }
             }
         } else {
             elements.timeRemaining.textContent = 'Waiting...';
+            elements.timeRemaining.className = 'info-value';
         }
 
         // Check if user has control

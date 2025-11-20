@@ -1,7 +1,7 @@
 """Queue management for train control."""
 import asyncio
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -27,10 +27,15 @@ class QueueManager:
         self._lock = asyncio.Lock()
         self._timer_task: Optional[asyncio.Task] = None
         self._callbacks: List = []
+        self._analytics_callback: Optional[Callable] = None
 
     def register_callback(self, callback):
         """Register a callback for queue changes."""
         self._callbacks.append(callback)
+
+    def register_analytics_callback(self, callback):
+        """Register analytics tracking callback."""
+        self._analytics_callback = callback
 
     async def _notify_callbacks(self):
         """Notify all registered callbacks of queue changes."""
@@ -78,11 +83,13 @@ class QueueManager:
         async with self._lock:
             user_index = None
             was_controlling = False
+            user_obj = None
 
             for i, user in enumerate(self.queue):
                 if user.user_id == user_id:
                     user_index = i
                     was_controlling = user.is_active
+                    user_obj = user
                     break
 
             if user_index is None:
@@ -92,6 +99,13 @@ class QueueManager:
                 }
 
             self.queue.pop(user_index)
+
+            # Notify analytics if user was controlling
+            if was_controlling and self._analytics_callback and user_obj:
+                try:
+                    self._analytics_callback("end_session", user_id)
+                except Exception as e:
+                    print(f"Error in analytics callback: {e}")
 
             # If the leaving user was controlling, assign to next
             if was_controlling:
@@ -111,6 +125,13 @@ class QueueManager:
         user.is_active = True
         user.control_started_at = time.time()
         self.current_controller = user
+
+        # Notify analytics
+        if self._analytics_callback:
+            try:
+                self._analytics_callback("start_session", user.user_id, user.username, user.joined_at)
+            except Exception as e:
+                print(f"Error in analytics callback: {e}")
 
         # Cancel existing timer
         if self._timer_task and not self._timer_task.done():

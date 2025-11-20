@@ -455,6 +455,69 @@ input[type="number"]:focus {
     color: var(--theme-primary);
 }
 
+/* Time remaining color coding */
+#timeRemaining {
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+#timeRemaining.time-unlimited {
+    color: #10b981;
+    text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+#timeRemaining.time-safe {
+    color: #10b981;
+}
+
+#timeRemaining.time-warning {
+    color: #f59e0b;
+    animation: pulse-warning 2s ease-in-out infinite;
+}
+
+#timeRemaining.time-danger {
+    color: #ef4444;
+    animation: pulse-danger 1s ease-in-out infinite;
+}
+
+#timeRemaining.time-critical {
+    color: #dc2626;
+    animation: pulse-critical 0.5s ease-in-out infinite;
+    font-weight: 900;
+}
+
+@keyframes pulse-warning {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
+@keyframes pulse-danger {
+    0%, 100% {
+        transform: scale(1);
+        text-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+    }
+    50% {
+        transform: scale(1.08);
+        text-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+    }
+}
+
+@keyframes pulse-critical {
+    0%, 100% {
+        transform: scale(1);
+        text-shadow: 0 0 10px rgba(220, 38, 38, 0.8);
+    }
+    50% {
+        transform: scale(1.1);
+        text-shadow: 0 0 20px rgba(220, 38, 38, 1);
+    }
+}
+
 .queue-list {
     margin: 20px 0;
 }
