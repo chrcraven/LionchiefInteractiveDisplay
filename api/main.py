@@ -38,12 +38,18 @@ async def lifespan(app: FastAPI):
 
     # Startup
     logger.info("Starting train queue system...")
-    queue_manager = QueueManager(
-        queue_timeout=config.queue_timeout,
-        allow_infinite_single=config.allow_infinite_single_user
-    )
+
+    # Initialize train controller first
     train_controller = TrainController(train_address=config.train_address)
     await train_controller.initialize()
+
+    # Initialize queue manager with train controller reference
+    queue_manager = QueueManager(
+        queue_timeout=config.queue_timeout,
+        allow_infinite_single=config.allow_infinite_single_user,
+        idle_timeout=config.idle_timeout,
+        train_controller=train_controller
+    )
 
     # Initialize job scheduler
     job_scheduler = JobScheduler(train_controller)
@@ -67,6 +73,8 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down train queue system...")
+    if queue_manager:
+        await queue_manager.stop_idle_timer()
     if job_scheduler:
         await job_scheduler.stop()
     if train_controller:

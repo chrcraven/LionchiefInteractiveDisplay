@@ -19,15 +19,25 @@ class QueueUser:
 class QueueManager:
     """Manages the queue for train control."""
 
-    def __init__(self, queue_timeout: int = 300, allow_infinite_single: bool = True):
+    def __init__(self, queue_timeout: int = 300, allow_infinite_single: bool = True,
+                 idle_timeout: int = 600, train_controller=None):
         self.queue_timeout = queue_timeout
         self.allow_infinite_single = allow_infinite_single
+        self.idle_timeout = idle_timeout  # Time in seconds before turning off lights when idle
+        self.train_controller = train_controller
         self.queue: List[QueueUser] = []
         self.current_controller: Optional[QueueUser] = None
         self._lock = asyncio.Lock()
         self._timer_task: Optional[asyncio.Task] = None
+        self._idle_timer_task: Optional[asyncio.Task] = None
+        self._last_activity_time: float = time.time()
+        self._lights_auto_off: bool = False  # Track if lights were auto-turned off
         self._callbacks: List = []
         self._analytics_callback: Optional[Callable] = None
+
+        # Start idle timer
+        if self.train_controller and self.idle_timeout > 0:
+            self._start_idle_timer()
 
     def register_callback(self, callback):
         """Register a callback for queue changes."""
@@ -65,6 +75,9 @@ class QueueManager:
 
             self.queue.append(user)
 
+            # Update activity time
+            self._update_activity_time()
+
             # If this is the first user, give them control immediately
             if len(self.queue) == 1 and self.current_controller is None:
                 await self._assign_control(user)
@@ -99,6 +112,9 @@ class QueueManager:
                 }
 
             self.queue.pop(user_index)
+
+            # Update activity time
+            self._update_activity_time()
 
             # Notify analytics if user was controlling
             if was_controlling and self._analytics_callback and user_obj:
@@ -219,3 +235,66 @@ class QueueManager:
                 self._timer_task = asyncio.create_task(self._control_timer())
 
             await self._notify_callbacks()
+
+    def _update_activity_time(self):
+        """Update the last activity time to reset idle timer."""
+        self._last_activity_time = time.time()
+        # Turn lights back on if they were auto-turned off
+        if self._lights_auto_off and self.train_controller:
+            self._lights_auto_off = False
+            asyncio.create_task(self._turn_lights_on())
+
+    async def _turn_lights_on(self):
+        """Turn lights back on after activity."""
+        try:
+            await self.train_controller.set_lights(True)
+        except Exception as e:
+            print(f"Error turning lights on: {e}")
+
+    def _start_idle_timer(self):
+        """Start the idle timeout timer."""
+        if self._idle_timer_task is None or self._idle_timer_task.done():
+            self._idle_timer_task = asyncio.create_task(self._idle_timer_loop())
+
+    async def _idle_timer_loop(self):
+        """Monitor for idle timeout and turn off lights when idle."""
+        try:
+            while True:
+                await asyncio.sleep(30)  # Check every 30 seconds
+
+                # Only check if queue is empty
+                if len(self.queue) == 0:
+                    idle_time = time.time() - self._last_activity_time
+
+                    # If idle for longer than timeout and lights haven't been turned off yet
+                    if idle_time >= self.idle_timeout and not self._lights_auto_off:
+                        print(f"Queue idle for {idle_time:.0f}s, turning off lights")
+                        await self._turn_lights_off_idle()
+                else:
+                    # Queue has activity, update last activity time
+                    self._update_activity_time()
+
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            print(f"Error in idle timer loop: {e}")
+
+    async def _turn_lights_off_idle(self):
+        """Turn off lights due to idle timeout."""
+        if self.train_controller:
+            try:
+                result = await self.train_controller.set_lights(False)
+                if result.get("success"):
+                    self._lights_auto_off = True
+                    print("Lights automatically turned off due to inactivity")
+            except Exception as e:
+                print(f"Error turning off lights: {e}")
+
+    async def stop_idle_timer(self):
+        """Stop the idle timeout timer."""
+        if self._idle_timer_task and not self._idle_timer_task.done():
+            self._idle_timer_task.cancel()
+            try:
+                await self._idle_timer_task
+            except asyncio.CancelledError:
+                pass

@@ -32,6 +32,7 @@ class TrainScriptInterpreter:
     - toggle                : Toggle direction
     - horn                  : Blow horn
     - bell on|off           : Control bell
+    - lights on|off         : Control lights
     - wait <seconds>        : Wait/delay
     - repeat <n> times      : Start repeat loop
     - end                   : End repeat loop
@@ -41,6 +42,7 @@ class TrainScriptInterpreter:
         # Simple train sequence
         speed 0
         bell on
+        lights on
         wait 2
         speed 15
         forward
@@ -49,6 +51,7 @@ class TrainScriptInterpreter:
         wait 1
         speed 0
         bell off
+        lights off
     """
 
     def __init__(self, train_controller):
@@ -117,6 +120,7 @@ class TrainScriptInterpreter:
             'toggle': 0,     # toggle
             'horn': 0,       # horn
             'bell': 1,       # bell on|off
+            'lights': 1,     # lights on|off
             'wait': 1,       # wait <seconds>
             'repeat': 2,     # repeat <n> times
             'end': 0,        # end
@@ -148,6 +152,12 @@ class TrainScriptInterpreter:
             if args[0].lower() not in ['on', 'off']:
                 raise TrainScriptError(
                     f"Line {line_num}: Bell argument must be 'on' or 'off', got '{args[0]}'"
+                )
+
+        elif command == 'lights':
+            if args[0].lower() not in ['on', 'off']:
+                raise TrainScriptError(
+                    f"Line {line_num}: Lights argument must be 'on' or 'off', got '{args[0]}'"
                 )
 
         elif command == 'wait':
@@ -332,6 +342,12 @@ class TrainScriptInterpreter:
             result = await self.train_controller.ring_bell(state)
             if not result.get("success", False):
                 raise Exception(result.get("message", "Bell command failed"))
+
+        elif command == 'lights':
+            state = args[0].lower() == 'on'
+            result = await self.train_controller.set_lights(state)
+            if not result.get("success", False):
+                raise Exception(result.get("message", "Lights command failed"))
 
         elif command == 'wait':
             wait_time = float(args[0])

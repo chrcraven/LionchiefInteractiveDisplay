@@ -151,6 +151,42 @@ class TrainController:
                 logger.error(f"Error controlling bell: {e}")
                 return {"success": False, "message": str(e)}
 
+    async def set_lights(self, state: bool) -> Dict:
+        """Control the train lights."""
+        async with self._lock:
+            try:
+                if self.train and self.connected:
+                    # Try different possible pyLionChief lighting methods
+                    try:
+                        if state:
+                            await asyncio.to_thread(self.train.set_lights, 1)
+                        else:
+                            await asyncio.to_thread(self.train.set_lights, 0)
+                    except AttributeError:
+                        # Try alternative method names
+                        try:
+                            if state:
+                                await asyncio.to_thread(self.train.cab_light_on)
+                            else:
+                                await asyncio.to_thread(self.train.cab_light_off)
+                        except AttributeError:
+                            logger.warning("Lighting control not available on this train model")
+                            return {
+                                "success": False,
+                                "message": "Lighting control not supported by this train"
+                            }
+                else:
+                    logger.info(f"Mock: Lights {'on' if state else 'off'}")
+
+                return {
+                    "success": True,
+                    "message": f"Lights {'on' if state else 'off'}",
+                    "lights_state": state
+                }
+            except Exception as e:
+                logger.error(f"Error controlling lights: {e}")
+                return {"success": False, "message": str(e)}
+
     async def emergency_stop(self) -> Dict:
         """Emergency stop the train."""
         async with self._lock:
