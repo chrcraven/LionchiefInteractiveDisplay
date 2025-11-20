@@ -8,10 +8,14 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-background) 100%);
     min-height: 100vh;
-    padding: 20px;
+    padding: 15px;
     color: #333;
     position: relative;
     overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* Background effects layer */
@@ -350,42 +354,53 @@ h3 {
 }
 
 input[type="text"],
-input[type="number"] {
+input[type="number"],
+textarea {
     flex: 1;
-    padding: 12px;
+    padding: 14px;
     border: 2px solid #e5e7eb;
-    border-radius: 5px;
+    border-radius: 8px;
     font-size: 16px;
+    -webkit-user-select: text;
+    user-select: text;
+    touch-action: manipulation;
 }
 
 input[type="text"]:focus,
-input[type="number"]:focus {
+input[type="number"]:focus,
+textarea:focus {
     outline: none;
     border-color: var(--theme-primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .btn {
-    padding: 12px 24px;
+    padding: 16px 24px;
     border: none;
-    border-radius: 5px;
-    font-size: 16px;
+    border-radius: 8px;
+    font-size: 17px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s;
+    min-height: 48px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .btn:active {
-    transform: translateY(0);
+    transform: scale(0.98);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none !important;
 }
 
 .btn-primary {
@@ -418,14 +433,16 @@ input[type="number"]:focus {
 }
 
 .btn-small {
-    padding: 8px 16px;
-    font-size: 14px;
+    padding: 12px 20px;
+    font-size: 15px;
+    min-height: 44px;
 }
 
 .btn-large {
-    padding: 16px 32px;
-    font-size: 18px;
+    padding: 20px 32px;
+    font-size: 19px;
     font-weight: bold;
+    min-height: 56px;
 }
 
 .queue-info {
@@ -584,29 +601,44 @@ input[type="number"]:focus {
 
 input[type="range"] {
     width: 100%;
-    height: 8px;
-    border-radius: 5px;
+    height: 12px;
+    border-radius: 6px;
     background: #e5e7eb;
     outline: none;
-    margin: 10px 0;
+    margin: 15px 0;
+    -webkit-appearance: none;
+    touch-action: none;
 }
 
 input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
     appearance: none;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: #667eea;
     cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+    transform: scale(1.2);
 }
 
 input[type="range"]::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: #667eea;
     cursor: pointer;
     border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.1s;
+}
+
+input[type="range"]::-moz-range-thumb:active {
+    transform: scale(1.2);
 }
 
 .speed-buttons {
@@ -721,26 +753,182 @@ input[type="range"]::-moz-range-thumb {
     font-size: 14px;
 }
 
-/* Responsive */
+/* Mobile-First Responsive Design */
 @media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        max-width: 100%;
+    }
+
     header {
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
+        padding: 16px;
+        text-align: center;
     }
 
     h1 {
-        font-size: 1.5em;
+        font-size: 1.6em;
+    }
+
+    h2 {
+        font-size: 1.3em;
+    }
+
+    .section {
+        padding: 16px;
+        margin-bottom: 15px;
     }
 
     .login-form {
         flex-direction: column;
+        gap: 12px;
     }
 
     .controls-grid {
         grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .control-group {
+        padding: 16px;
+    }
+
+    .speed-buttons {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .speed-buttons .btn {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 0;
+    }
+
+    .direction-control {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .direction-control .btn {
+        width: 100%;
     }
 
     .sound-controls {
         grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .queue-info {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .info-value {
+        font-size: 28px;
+    }
+
+    .status-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .config-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .config-item label {
+        margin-bottom: 8px;
+    }
+
+    /* Larger touch targets on mobile */
+    .btn {
+        padding: 18px 24px;
+        font-size: 18px;
+        min-height: 52px;
+    }
+
+    .btn-small {
+        padding: 14px 20px;
+        font-size: 16px;
+        min-height: 48px;
+    }
+
+    .btn-large {
+        padding: 22px 32px;
+        font-size: 20px;
+        min-height: 60px;
+    }
+
+    /* Better queue item display on mobile */
+    .queue-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .queue-item-info {
+        width: 100%;
+    }
+
+    /* Improve header readability */
+    .connection-status {
+        font-size: 15px;
+    }
+
+    .status-dot {
+        width: 14px;
+        height: 14px;
+    }
+}
+
+/* Extra small devices (phones in portrait) */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.4em;
+    }
+
+    h2 {
+        font-size: 1.2em;
+    }
+
+    .section {
+        padding: 14px;
+    }
+
+    .speed-buttons .btn {
+        flex: 1 1 100%;
+    }
+}
+
+/* Landscape mobile */
+@media (max-width: 896px) and (orientation: landscape) {
+    body {
+        padding: 8px;
+    }
+
+    .section {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    header {
+        padding: 12px;
+    }
+
+    h1 {
+        font-size: 1.3em;
+    }
+
+    .controls-grid {
+        gap: 10px;
+    }
+
+    .control-group {
+        padding: 12px;
     }
 }
