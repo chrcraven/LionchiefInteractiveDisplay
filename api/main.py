@@ -15,6 +15,7 @@ from api.train_controller import TrainController
 from api.controls_config import controls_config
 from api.analytics import analytics
 from api.profanity_filter import profanity_filter
+from api.job_scheduler import JobScheduler
 
 # Configure logging
 logging.basicConfig(
@@ -26,13 +27,14 @@ logger = logging.getLogger(__name__)
 # Global instances
 queue_manager: Optional[QueueManager] = None
 train_controller: Optional[TrainController] = None
+job_scheduler: Optional[JobScheduler] = None
 websocket_connections: list[WebSocket] = []
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan."""
-    global queue_manager, train_controller
+    global queue_manager, train_controller, job_scheduler
 
     # Startup
     logger.info("Starting train queue system...")
@@ -42,6 +44,10 @@ async def lifespan(app: FastAPI):
     )
     train_controller = TrainController(train_address=config.train_address)
     await train_controller.initialize()
+
+    # Initialize job scheduler
+    job_scheduler = JobScheduler(train_controller)
+    await job_scheduler.start()
 
     # Register callback for queue changes
     queue_manager.register_callback(broadcast_queue_status)
@@ -61,6 +67,8 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down train queue system...")
+    if job_scheduler:
+        await job_scheduler.stop()
     if train_controller:
         await train_controller.disconnect()
     logger.info("Train queue system shutdown complete")
@@ -124,6 +132,22 @@ class ConfigUpdateRequest(BaseModel):
 class ControlsUpdateRequest(BaseModel):
     admin_password: str
     controls: dict
+
+
+class CreateJobRequest(BaseModel):
+    name: str
+    description: str
+    script: str
+    cron_expression: str
+    enabled: bool = True
+
+
+class UpdateJobRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    script: Optional[str] = None
+    cron_expression: Optional[str] = None
+    enabled: Optional[bool] = None
 
 
 # WebSocket broadcast function
@@ -528,6 +552,109 @@ async def reset_profanity_filter(admin_password: Optional[str] = None):
         return {"success": True, "message": "Reset to default blocked words"}
     else:
         return {"success": False, "message": "Failed to reset"}
+
+
+@app.get("/jobs")
+async def list_jobs():
+    """List all scheduled jobs."""
+    if not job_scheduler:
+        raise HTTPException(status_code=500, detail="Job scheduler not initialized")
+
+    return {"jobs": job_scheduler.list_jobs()}
+
+
+@app.get("/jobs/{job_id}")
+async def get_job(job_id: str):
+    """Get a specific job."""
+    if not job_scheduler:
+        raise HTTPException(status_code=500, detail="Job scheduler not initialized")
+
+    job = job_scheduler.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    return {"job": job.to_dict()}
+
+
+@app.post("/jobs")
+async def create_job(request: CreateJobRequest, admin_password: Optional[str] = None):
+    """Create a new scheduled job."""
+    if not controls_config.is_admin(admin_password or ""):
+        raise HTTPException(status_code=403, detail="Admin password required")
+
+    if not job_scheduler:
+        raise HTTPException(status_code=500, detail="Job scheduler not initialized")
+
+    result = job_scheduler.create_job(
+        name=request.name,
+        description=request.description,
+        script=request.script,
+        cron_expression=request.cron_expression,
+        enabled=request.enabled
+    )
+
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Failed to create job"))
+
+    return result
+
+
+@app.put("/jobs/{job_id}")
+async def update_job(job_id: str, request: UpdateJobRequest, admin_password: Optional[str] = None):
+    """Update an existing job."""
+    if not controls_config.is_admin(admin_password or ""):
+        raise HTTPException(status_code=403, detail="Admin password required")
+
+    if not job_scheduler:
+        raise HTTPException(status_code=500, detail="Job scheduler not initialized")
+
+    result = job_scheduler.update_job(
+        job_id=job_id,
+        name=request.name,
+        description=request.description,
+        script=request.script,
+        cron_expression=request.cron_expression,
+        enabled=request.enabled
+    )
+
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Failed to update job"))
+
+    return result
+
+
+@app.delete("/jobs/{job_id}")
+async def delete_job(job_id: str, admin_password: Optional[str] = None):
+    """Delete a job."""
+    if not controls_config.is_admin(admin_password or ""):
+        raise HTTPException(status_code=403, detail="Admin password required")
+
+    if not job_scheduler:
+        raise HTTPException(status_code=500, detail="Job scheduler not initialized")
+
+    result = job_scheduler.delete_job(job_id)
+
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Failed to delete job"))
+
+    return result
+
+
+@app.post("/jobs/{job_id}/run")
+async def run_job_now(job_id: str, admin_password: Optional[str] = None):
+    """Run a job immediately (outside of schedule)."""
+    if not controls_config.is_admin(admin_password or ""):
+        raise HTTPException(status_code=403, detail="Admin password required")
+
+    if not job_scheduler:
+        raise HTTPException(status_code=500, detail="Job scheduler not initialized")
+
+    result = await job_scheduler.run_job_now(job_id)
+
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Failed to run job"))
+
+    return result
 
 
 @app.websocket("/ws")

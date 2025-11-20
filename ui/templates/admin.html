@@ -386,6 +386,7 @@
             <div class="nav-tabs">
                 <button class="nav-tab active" onclick="switchTab('queue')">Queue Settings</button>
                 <button class="nav-tab" onclick="switchTab('controls')">Train Controls</button>
+                <button class="nav-tab" onclick="switchTab('scheduler')">Job Scheduler</button>
                 <button class="nav-tab" onclick="switchTab('analytics')">Analytics</button>
                 <button class="nav-tab" onclick="switchTab('filter')">Profanity Filter</button>
                 <button class="nav-tab" onclick="switchTab('theme')">Theme</button>
@@ -472,6 +473,77 @@
                 </div>
 
                 <button class="btn btn-success" onclick="saveControls()">Save Control Settings</button>
+            </div>
+
+            <!-- Job Scheduler Tab -->
+            <div id="scheduler-tab" class="tab-content">
+                <h2>Job Scheduler</h2>
+                <div class="alert alert-info">
+                    <strong>Info:</strong> Schedule automated train sequences using cron expressions. Write scripts using simple commands like <code>speed</code>, <code>horn</code>, <code>bell</code>, <code>wait</code>, etc.
+                </div>
+
+                <div class="password-field">
+                    <input type="password" id="schedulerAdminPassword" placeholder="Admin Password (required for changes)">
+                </div>
+
+                <!-- Create/Edit Job Form -->
+                <div style="margin-bottom: 30px;">
+                    <h3 id="jobFormTitle" style="margin-bottom: 15px;">Create New Job</h3>
+                    <input type="hidden" id="editingJobId" value="">
+
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <label style="font-weight: 600; margin-bottom: 5px; display: block;">Job Name:</label>
+                            <input type="text" id="jobName" placeholder="e.g., Morning Show" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 5px;">
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; margin-bottom: 5px; display: block;">Description:</label>
+                            <input type="text" id="jobDescription" placeholder="e.g., Runs every morning at 9 AM" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 5px;">
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; margin-bottom: 5px; display: block;">
+                                Cron Expression:
+                                <span style="font-weight: normal; color: #6b7280; font-size: 14px;">(minute hour day month weekday)</span>
+                            </label>
+                            <input type="text" id="jobCron" placeholder="0 9 * * *" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 5px;">
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">
+                                Examples: <code>0 9 * * *</code> (daily at 9 AM), <code>*/15 * * * *</code> (every 15 min), <code>0 */2 * * *</code> (every 2 hours)
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; margin-bottom: 5px; display: block;">Train Script:</label>
+                            <textarea id="jobScript" rows="15" placeholder="# Example script
+speed 0
+bell on
+wait 2
+speed 15
+forward
+wait 5
+horn
+wait 2
+speed 0
+bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 5px; font-family: monospace; font-size: 14px;"></textarea>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">
+                                Commands: <code>speed 0-31</code>, <code>forward</code>, <code>reverse</code>, <code>toggle</code>, <code>horn</code>,
+                                <code>bell on/off</code>, <code>wait seconds</code>, <code>repeat N times ... end</code>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" onclick="saveJob()">Save Job</button>
+                            <button class="btn btn-secondary" onclick="cancelEdit()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jobs List -->
+                <div>
+                    <h3 style="margin-bottom: 15px;">Scheduled Jobs</h3>
+                    <div id="jobs-list" class="stats-list" style="max-height: 500px;"></div>
+                </div>
             </div>
 
             <!-- Analytics Tab -->
@@ -605,6 +677,8 @@
                 loadQueueConfig();
             } else if (tabName === 'controls') {
                 loadControls();
+            } else if (tabName === 'scheduler') {
+                loadJobs();
             } else if (tabName === 'analytics') {
                 loadAnalytics();
             } else if (tabName === 'filter') {
@@ -1056,6 +1130,216 @@
             } catch (error) {
                 console.error('Failed to reset profanity filter:', error);
                 showMessage('Error resetting profanity filter', 'error');
+            }
+        }
+
+        // Job Scheduler functions
+        async function loadJobs() {
+            try {
+                const response = await fetch(API_URL + '/jobs');
+                const data = await response.json();
+
+                const container = document.getElementById('jobs-list');
+                container.innerHTML = '';
+
+                const jobs = data.jobs || [];
+                if (jobs.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #6b7280;">No scheduled jobs yet. Create one above!</p>';
+                    return;
+                }
+
+                jobs.forEach(job => {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ' + (job.enabled ? '#10b981' : '#6b7280');
+
+                    const header = document.createElement('div');
+                    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
+
+                    const title = document.createElement('div');
+                    title.innerHTML = '<strong style="font-size: 18px;">' + job.name + '</strong>' +
+                        '<span style="margin-left: 10px; padding: 3px 8px; background: ' + (job.enabled ? '#d1fae5' : '#f3f4f6') +
+                        '; color: ' + (job.enabled ? '#065f46' : '#6b7280') + '; border-radius: 4px; font-size: 12px;">' +
+                        (job.enabled ? 'Enabled' : 'Disabled') + '</span>';
+
+                    const buttons = document.createElement('div');
+                    buttons.style.cssText = 'display: flex; gap: 5px;';
+
+                    const runBtn = document.createElement('button');
+                    runBtn.className = 'btn btn-small';
+                    runBtn.textContent = 'Run Now';
+                    runBtn.style.cssText = 'padding: 5px 10px; font-size: 12px; background: #667eea;';
+                    runBtn.onclick = () => runJobNow(job.id);
+
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'btn btn-small';
+                    editBtn.textContent = 'Edit';
+                    editBtn.style.cssText = 'padding: 5px 10px; font-size: 12px; background: #f59e0b;';
+                    editBtn.onclick = () => editJob(job);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn btn-small';
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.style.cssText = 'padding: 5px 10px; font-size: 12px; background: #ef4444;';
+                    deleteBtn.onclick = () => deleteJob(job.id, job.name);
+
+                    buttons.appendChild(runBtn);
+                    buttons.appendChild(editBtn);
+                    buttons.appendChild(deleteBtn);
+
+                    header.appendChild(title);
+                    header.appendChild(buttons);
+
+                    const details = document.createElement('div');
+                    details.style.cssText = 'font-size: 14px; color: #6b7280; margin-bottom: 5px;';
+                    details.innerHTML = '<strong>Description:</strong> ' + job.description;
+
+                    const schedule = document.createElement('div');
+                    schedule.style.cssText = 'font-size: 14px; color: #6b7280; margin-bottom: 5px;';
+                    schedule.innerHTML = '<strong>Schedule:</strong> <code>' + job.cron_expression + '</code>';
+
+                    const stats = document.createElement('div');
+                    stats.style.cssText = 'font-size: 14px; color: #6b7280;';
+                    stats.innerHTML = '<strong>Last Run:</strong> ' + (job.last_run ? new Date(job.last_run).toLocaleString() : 'Never') +
+                        ' | <strong>Run Count:</strong> ' + job.run_count +
+                        ' | <strong>Last Result:</strong> ' + (job.last_result || 'N/A');
+
+                    item.appendChild(header);
+                    item.appendChild(details);
+                    item.appendChild(schedule);
+                    item.appendChild(stats);
+                    container.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Failed to load jobs:', error);
+                showMessage('Error loading jobs', 'error');
+            }
+        }
+
+        async function saveJob() {
+            const password = document.getElementById('schedulerAdminPassword').value;
+            const jobId = document.getElementById('editingJobId').value;
+
+            const jobData = {
+                name: document.getElementById('jobName').value.trim(),
+                description: document.getElementById('jobDescription').value.trim(),
+                cron_expression: document.getElementById('jobCron').value.trim(),
+                script: document.getElementById('jobScript').value.trim(),
+                enabled: true
+            };
+
+            if (!jobData.name || !jobData.description || !jobData.cron_expression || !jobData.script) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                let response;
+                if (jobId) {
+                    // Update existing job
+                    response = await fetch(API_URL + '/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(jobData)
+                    });
+                } else {
+                    // Create new job
+                    response = await fetch(API_URL + '/jobs?admin_password=' + encodeURIComponent(password), {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(jobData)
+                    });
+                }
+
+                if (response.ok) {
+                    showMessage(jobId ? 'Job updated successfully' : 'Job created successfully');
+                    cancelEdit();
+                    loadJobs();
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    const data = await response.json();
+                    showMessage(data.detail || 'Failed to save job', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to save job:', error);
+                showMessage('Error saving job', 'error');
+            }
+        }
+
+        function editJob(job) {
+            document.getElementById('jobFormTitle').textContent = 'Edit Job';
+            document.getElementById('editingJobId').value = job.id;
+            document.getElementById('jobName').value = job.name;
+            document.getElementById('jobDescription').value = job.description;
+            document.getElementById('jobCron').value = job.cron_expression;
+            document.getElementById('jobScript').value = job.script;
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function cancelEdit() {
+            document.getElementById('jobFormTitle').textContent = 'Create New Job';
+            document.getElementById('editingJobId').value = '';
+            document.getElementById('jobName').value = '';
+            document.getElementById('jobDescription').value = '';
+            document.getElementById('jobCron').value = '';
+            document.getElementById('jobScript').value = '';
+        }
+
+        async function deleteJob(jobId, jobName) {
+            const password = document.getElementById('schedulerAdminPassword').value;
+
+            if (!confirm('Delete job "' + jobName + '"? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showMessage('Job deleted successfully');
+                    loadJobs();
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to delete job', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to delete job:', error);
+                showMessage('Error deleting job', 'error');
+            }
+        }
+
+        async function runJobNow(jobId) {
+            const password = document.getElementById('schedulerAdminPassword').value;
+
+            if (!confirm('Run this job now?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/jobs/' + jobId + '/run?admin_password=' + encodeURIComponent(password), {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage('Job started successfully');
+                    } else {
+                        showMessage('Job failed: ' + data.error, 'error');
+                    }
+                    // Reload to see updated stats
+                    setTimeout(loadJobs, 1000);
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to run job', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to run job:', error);
+                showMessage('Error running job', 'error');
             }
         }
 
