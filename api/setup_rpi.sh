@@ -103,8 +103,9 @@ After=network.target bluetooth.target
 [Service]
 Type=simple
 User=$USER
-WorkingDirectory=$API_DIR
+WorkingDirectory=$PROJECT_ROOT
 Environment="PATH=$API_DIR/venv/bin"
+Environment="PYTHONPATH=$PROJECT_ROOT"
 EnvironmentFile=$PROJECT_ROOT/.env
 ExecStart=$API_DIR/venv/bin/python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
 Restart=always
