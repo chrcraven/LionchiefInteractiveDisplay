@@ -1,11 +1,13 @@
 """Configuration management for the train queue system."""
 import os
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class AppConfig(BaseModel):
     """Application configuration."""
+    model_config = ConfigDict(extra='forbid')
+
     queue_timeout: int = 300  # Default 5 minutes in seconds
     allow_infinite_single_user: bool = True
     idle_timeout: int = 600  # Default 10 minutes in seconds before auto-turning off lights
