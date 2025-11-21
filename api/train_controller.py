@@ -174,6 +174,28 @@ class TrainController:
                 pass
         logger.info("Train connection manager stopped")
 
+    def _verify_connection(self) -> bool:
+        """
+        Verify the connection is actually alive.
+        Returns True if connected, False otherwise.
+        Updates self.connected if connection is actually lost.
+        """
+        if not self.connected or not self.train:
+            return False
+
+        # Check actual BLE connection status
+        try:
+            if hasattr(self.train, 'train') and hasattr(self.train.train, 'is_connected'):
+                if not self.train.train.is_connected:
+                    logger.warning("Connection verification failed: BLE not connected")
+                    self.connected = False
+                    return False
+            return True
+        except Exception as e:
+            logger.warning(f"Connection verification failed: {e}")
+            self.connected = False
+            return False
+
     async def set_speed(self, speed: int) -> Dict:
         """Set train speed (0-31)."""
         async with self._lock:
@@ -181,7 +203,8 @@ class TrainController:
                 if speed < 0 or speed > 31:
                     return {"success": False, "message": "Speed must be between 0 and 31"}
 
-                if self.train and self.connected:
+                # Verify connection before sending command
+                if self._verify_connection():
                     # Convert from 0-31 scale to 0-100 scale for lionchief
                     lionchief_speed = int((speed / 31) * 100)
                     await self.train.motor.set_speed(lionchief_speed)
@@ -196,6 +219,7 @@ class TrainController:
                 }
             except Exception as e:
                 logger.error(f"Error setting speed: {e}")
+                self.connected = False  # Mark as disconnected on error
                 return {"success": False, "message": str(e)}
 
     async def set_direction(self, direction: str) -> Dict:
@@ -208,7 +232,8 @@ class TrainController:
                         "message": "Direction must be 'forward', 'reverse', or 'toggle'"
                     }
 
-                if self.train and self.connected:
+                # Verify connection before sending command
+                if self._verify_connection():
                     if direction == "toggle":
                         new_direction = "reverse" if self._current_direction == "forward" else "forward"
                         await self.train.motor.set_movement_direction(new_direction == "forward")
@@ -233,13 +258,15 @@ class TrainController:
                 }
             except Exception as e:
                 logger.error(f"Error setting direction: {e}")
+                self.connected = False  # Mark as disconnected on error
                 return {"success": False, "message": str(e)}
 
     async def blow_horn(self) -> Dict:
         """Blow the train horn."""
         async with self._lock:
             try:
-                if self.train and self.connected:
+                # Verify connection before sending command
+                if self._verify_connection():
                     # Turn horn on briefly then off
                     await self.train.sound.set_horn(True)
                     await asyncio.sleep(0.5)
@@ -250,13 +277,15 @@ class TrainController:
                 return {"success": True, "message": "Horn blown"}
             except Exception as e:
                 logger.error(f"Error blowing horn: {e}")
+                self.connected = False  # Mark as disconnected on error
                 return {"success": False, "message": str(e)}
 
     async def ring_bell(self, state: bool) -> Dict:
         """Ring the train bell."""
         async with self._lock:
             try:
-                if self.train and self.connected:
+                # Verify connection before sending command
+                if self._verify_connection():
                     await self.train.sound.set_bell(state)
                 else:
                     logger.info(f"Mock: Bell {'on' if state else 'off'}")
@@ -268,13 +297,15 @@ class TrainController:
                 }
             except Exception as e:
                 logger.error(f"Error controlling bell: {e}")
+                self.connected = False  # Mark as disconnected on error
                 return {"success": False, "message": str(e)}
 
     async def set_lights(self, state: bool) -> Dict:
         """Control the train lights."""
         async with self._lock:
             try:
-                if self.train and self.connected:
+                # Verify connection before sending command
+                if self._verify_connection():
                     await self.train.lighting.set_lights(state)
                 else:
                     logger.info(f"Mock: Lights {'on' if state else 'off'}")
@@ -286,13 +317,15 @@ class TrainController:
                 }
             except Exception as e:
                 logger.error(f"Error controlling lights: {e}")
+                self.connected = False  # Mark as disconnected on error
                 return {"success": False, "message": str(e)}
 
     async def emergency_stop(self) -> Dict:
         """Emergency stop the train."""
         async with self._lock:
             try:
-                if self.train and self.connected:
+                # Verify connection before sending command
+                if self._verify_connection():
                     await self.train.motor.stop()
                 else:
                     logger.info("Mock: Emergency stop")
@@ -301,6 +334,7 @@ class TrainController:
                 return {"success": True, "message": "Emergency stop activated"}
             except Exception as e:
                 logger.error(f"Error during emergency stop: {e}")
+                self.connected = False  # Mark as disconnected on error
                 return {"success": False, "message": str(e)}
 
     def get_status(self) -> Dict:
@@ -408,6 +442,12 @@ class TrainController:
                 self.train_address = address
                 self.train = LionChiefConnection(address, {})
                 await self.train.connect()
+
+                # Register disconnect callback if possible
+                if hasattr(self.train, 'train') and hasattr(self.train.train, 'set_disconnected_callback'):
+                    self.train.train.set_disconnected_callback(self._on_disconnect_callback)
+                    logger.debug("Disconnect callback registered")
+
                 self.connected = True
                 logger.info("Train connected successfully")
 
