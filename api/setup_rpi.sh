@@ -18,6 +18,32 @@ if [ "$EUID" -eq 0 ]; then
     exit 1
 fi
 
+# Check Python version
+PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
+PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
+PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
+
+echo "📍 Detected Python version: $PYTHON_VERSION"
+
+if [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -ge 13 ]; then
+    echo ""
+    echo "❌ ERROR: Python 3.13+ is not compatible with this application"
+    echo ""
+    echo "   Pydantic v1 (required to avoid Rust compilation) only supports Python 3.7-3.12"
+    echo ""
+    echo "   Please install Python 3.11 or 3.12:"
+    echo "   sudo apt-get install python3.11 python3.11-venv"
+    echo ""
+    echo "   Then run this script with:"
+    echo "   PYTHON_CMD=python3.11 ./api/setup_rpi.sh"
+    exit 1
+fi
+
+# Use specified Python or default to python3
+PYTHON_CMD=${PYTHON_CMD:-python3}
+echo "📍 Using Python command: $PYTHON_CMD"
+echo ""
+
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -57,7 +83,7 @@ if [ -d "venv" ]; then
     echo "   Virtual environment already exists, removing..."
     rm -rf venv
 fi
-python3 -m venv venv
+$PYTHON_CMD -m venv venv
 
 # Activate virtual environment
 echo "   Activating virtual environment..."
