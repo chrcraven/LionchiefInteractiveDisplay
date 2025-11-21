@@ -18,30 +18,75 @@ if [ "$EUID" -eq 0 ]; then
     exit 1
 fi
 
-# Check Python version
-PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
-PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
-PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
+# Find compatible Python version automatically
+echo "🔍 Finding compatible Python version..."
 
-echo "📍 Detected Python version: $PYTHON_VERSION"
+# Function to check if a Python version is compatible
+check_python_compatible() {
+    local py_cmd=$1
+    if ! command -v $py_cmd &> /dev/null; then
+        return 1
+    fi
 
-if [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -ge 13 ]; then
-    echo ""
-    echo "❌ ERROR: Python 3.13+ is not compatible with this application"
-    echo ""
-    echo "   Pydantic v1 (required to avoid Rust compilation) only supports Python 3.7-3.12"
-    echo ""
-    echo "   Please install Python 3.11 or 3.12:"
-    echo "   sudo apt-get install python3.11 python3.11-venv"
-    echo ""
-    echo "   Then run this script with:"
-    echo "   PYTHON_CMD=python3.11 ./api/setup_rpi.sh"
-    exit 1
+    local version=$($py_cmd --version 2>&1 | awk '{print $2}')
+    local major=$(echo $version | cut -d. -f1)
+    local minor=$(echo $version | cut -d. -f2)
+
+    # Compatible if Python 3.7 through 3.12
+    if [ "$major" -eq 3 ] && [ "$minor" -ge 7 ] && [ "$minor" -le 12 ]; then
+        return 0
+    fi
+    return 1
+}
+
+# Use PYTHON_CMD if specified by user
+if [ -n "$PYTHON_CMD" ]; then
+    if check_python_compatible "$PYTHON_CMD"; then
+        echo "✓ Using user-specified Python: $PYTHON_CMD ($($PYTHON_CMD --version 2>&1 | awk '{print $2}'))"
+    else
+        echo "❌ ERROR: Specified Python '$PYTHON_CMD' is not compatible"
+        exit 1
+    fi
+else
+    # Try to find compatible Python automatically
+    PYTHON_CMD=""
+
+    # Try python3.11 and python3.12 first (most likely to be compatible)
+    for py_version in python3.11 python3.12 python3.10 python3.9 python3.8 python3; do
+        if check_python_compatible "$py_version"; then
+            PYTHON_CMD=$py_version
+            echo "✓ Found compatible Python: $PYTHON_CMD ($($PYTHON_CMD --version 2>&1 | awk '{print $2}'))"
+            break
+        fi
+    done
+
+    # If no compatible Python found, try to install Python 3.11
+    if [ -z "$PYTHON_CMD" ]; then
+        echo ""
+        echo "⚠️  No compatible Python version found (need Python 3.7-3.12)"
+        echo "📦 Attempting to install Python 3.11..."
+        echo ""
+
+        sudo apt-get update
+        if sudo apt-get install -y python3.11 python3.11-venv python3.11-dev; then
+            PYTHON_CMD=python3.11
+            echo "✓ Successfully installed Python 3.11"
+        else
+            echo ""
+            echo "❌ ERROR: Could not install Python 3.11 automatically"
+            echo ""
+            echo "Your system has Python 3.13+ which is incompatible with this application."
+            echo "Pydantic v1 (required to avoid Rust compilation) only supports Python 3.7-3.12"
+            echo ""
+            echo "Please manually install a compatible Python version:"
+            echo "  sudo apt-get install python3.11 python3.11-venv python3.11-dev"
+            echo ""
+            echo "Then run this script again."
+            exit 1
+        fi
+    fi
 fi
 
-# Use specified Python or default to python3
-PYTHON_CMD=${PYTHON_CMD:-python3}
-echo "📍 Using Python command: $PYTHON_CMD"
 echo ""
 
 # Get the directory where the script is located
