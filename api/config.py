@@ -1,17 +1,17 @@
 """Configuration management for the train queue system."""
 import os
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class AppConfig(BaseModel):
     """Application configuration."""
-    queue_timeout: int = Field(default=300, description="Default 5 minutes in seconds")
-    allow_infinite_single_user: bool = Field(default=True)
-    idle_timeout: int = Field(default=600, description="Default 10 minutes in seconds before auto-turning off lights")
-    train_address: Optional[str] = Field(default=None, description="LionChief train BLE address")
-    server_host: str = Field(default="0.0.0.0")
-    server_port: int = Field(default=8000)
+    queue_timeout: int = 300  # Default 5 minutes in seconds
+    allow_infinite_single_user: bool = True
+    idle_timeout: int = 600  # Default 10 minutes in seconds before auto-turning off lights
+    train_address: Optional[str] = None  # LionChief train BLE address
+    server_host: str = "0.0.0.0"
+    server_port: int = 8000
 
 
 # Global configuration instance
