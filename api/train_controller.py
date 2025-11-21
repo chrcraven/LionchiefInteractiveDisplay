@@ -2,6 +2,7 @@
 import asyncio
 from typing import Optional, Dict, List
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -36,31 +37,76 @@ class TrainController:
         logger.info("Train connection manager started")
 
     async def _connection_loop(self):
-        """Continuously try to connect to the train."""
-        retry_delay = 30  # seconds between retry attempts
+        """Continuously try to connect to the train and maintain connection health."""
+        base_retry_delay = 30  # base seconds between retry attempts
+        max_retry_delay = 120  # maximum retry delay
+        current_retry_delay = base_retry_delay
+        health_check_interval = 20  # seconds between health checks when connected
+        keepalive_interval = 30  # seconds between keepalive messages
+
+        last_keepalive = 0
+        consecutive_failures = 0
 
         while self._should_reconnect:
             if not self.connected:
+                # Clean up any existing connection before reconnecting
+                if self.train:
+                    try:
+                        await self.train.disconnect()
+                    except Exception:
+                        pass
+                    self.train = None
+
                 try:
                     await self._attempt_connection()
+                    consecutive_failures = 0
+                    current_retry_delay = base_retry_delay
+                    last_keepalive = time.time()  # Reset keepalive timer on successful connection
                 except Exception as e:
-                    logger.error(f"Connection attempt failed: {e}")
-                    logger.info(f"Will retry in {retry_delay} seconds...")
+                    consecutive_failures += 1
+                    logger.error(f"Connection attempt failed (attempt {consecutive_failures}): {e}")
 
-            # Wait before next attempt (only if not connected)
+                    # Exponential backoff with cap
+                    current_retry_delay = min(base_retry_delay * (1.5 ** min(consecutive_failures - 1, 3)), max_retry_delay)
+                    logger.info(f"Will retry in {current_retry_delay:.1f} seconds...")
+
+            # Wait before next check
             if not self.connected:
-                await asyncio.sleep(retry_delay)
+                await asyncio.sleep(current_retry_delay)
             else:
-                # If connected, check every 60 seconds if still connected
-                await asyncio.sleep(60)
-                # Check if connection is still alive by testing the train object
+                # Check connection health more frequently when connected
+                await asyncio.sleep(health_check_interval)
+
+                # Check if connection is still alive
                 if self.train and self.connected:
                     try:
-                        # Simple check - just verify the object exists
-                        pass
-                    except Exception:
-                        logger.warning("Train connection lost, will attempt reconnect")
+                        # Check the actual BLE connection status
+                        if hasattr(self.train, 'train') and hasattr(self.train.train, 'is_connected'):
+                            if not self.train.train.is_connected:
+                                logger.warning("BLE connection lost, will attempt reconnect")
+                                self.connected = False
+                                self.train = None
+                                continue
+
+                        # Send keepalive to prevent timeout (maintain speed or send status request)
+                        current_time = time.time()
+                        if current_time - last_keepalive > keepalive_interval:
+                            # Send a harmless command to keep connection alive
+                            # Just re-set the current speed
+                            await self.train.motor.set_speed(int((self._current_speed / 31) * 100))
+                            last_keepalive = current_time
+                            logger.debug("Keepalive message sent")
+
+                    except Exception as e:
+                        logger.warning(f"Connection health check failed: {e}, will attempt reconnect")
                         self.connected = False
+                        self.train = None
+
+    def _on_disconnect_callback(self, client):
+        """Callback when BLE connection is lost."""
+        logger.warning(f"BLE disconnection detected for {client.address}")
+        self.connected = False
+        # The connection loop will automatically attempt to reconnect
 
     async def _attempt_connection(self):
         """Attempt to connect to a train (either specified address or discovered)."""
@@ -78,6 +124,12 @@ class TrainController:
                 # For direct connection, we use address as profile and empty dict for manufacturer_data
                 self.train = LionChiefConnection(self.train_address, {})
                 await self.train.connect()
+
+                # Register disconnect callback if possible
+                if hasattr(self.train, 'train') and hasattr(self.train.train, 'set_disconnected_callback'):
+                    self.train.train.set_disconnected_callback(self._on_disconnect_callback)
+                    logger.debug("Disconnect callback registered")
+
                 self.connected = True
                 logger.info(f"✓ Successfully connected to train at {self.train_address}")
             else:
@@ -94,6 +146,12 @@ class TrainController:
                     # discovered trains are already LionChiefConnection objects
                     self.train = first_train['connection']
                     await self.train.connect()
+
+                    # Register disconnect callback if possible
+                    if hasattr(self.train, 'train') and hasattr(self.train.train, 'set_disconnected_callback'):
+                        self.train.train.set_disconnected_callback(self._on_disconnect_callback)
+                        logger.debug("Disconnect callback registered")
+
                     self.connected = True
                     logger.info(f"✓ Successfully connected to {first_train['name']}")
                 else:
