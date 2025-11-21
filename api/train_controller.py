@@ -25,14 +25,11 @@ class TrainController:
         """Initialize connection to the train with automatic retry."""
         # Check if pyLionChief is available
         try:
-            from pyLionChief import LionChiefEngine
+            from lionchief.connection import LionChiefConnection
         except ImportError:
-            try:
-                from pyLionChief.pyLionChief import LionChiefEngine
-            except ImportError:
-                logger.warning("pyLionChief not available, running in mock mode")
-                self.train = None
-                return
+            logger.warning("pyLionChief not available, running in mock mode")
+            self.train = None
+            return
 
         # Start the connection retry loop in the background
         self._connection_task = asyncio.create_task(self._connection_loop())
@@ -68,20 +65,19 @@ class TrainController:
     async def _attempt_connection(self):
         """Attempt to connect to a train (either specified address or discovered)."""
         try:
-            from pyLionChief import LionChiefEngine
+            from lionchief.connection import LionChiefConnection
         except ImportError:
-            try:
-                from pyLionChief.pyLionChief import LionChiefEngine
-            except ImportError:
-                logger.error("pyLionChief not available")
-                return
+            logger.error("pyLionChief not available")
+            return
 
         try:
             if self.train_address:
                 # Connect to specified address
                 logger.info(f"Attempting to connect to train at {self.train_address}...")
-                self.train = LionChiefEngine(self.train_address)
-                await asyncio.to_thread(self.train.connect)
+                # LionChiefConnection expects (profile, manufacturer_data)
+                # For direct connection, we use address as profile and empty dict for manufacturer_data
+                self.train = LionChiefConnection(self.train_address, {})
+                await self.train.connect()
                 self.connected = True
                 logger.info(f"✓ Successfully connected to train at {self.train_address}")
             else:
@@ -95,8 +91,9 @@ class TrainController:
                     logger.info(f"Attempting to connect...")
 
                     self.train_address = first_train['address']
-                    self.train = LionChiefEngine(self.train_address)
-                    await asyncio.to_thread(self.train.connect)
+                    # discovered trains are already LionChiefConnection objects
+                    self.train = first_train['connection']
+                    await self.train.connect()
                     self.connected = True
                     logger.info(f"✓ Successfully connected to {first_train['name']}")
                 else:
@@ -127,7 +124,9 @@ class TrainController:
                     return {"success": False, "message": "Speed must be between 0 and 31"}
 
                 if self.train and self.connected:
-                    await asyncio.to_thread(self.train.set_speed, speed)
+                    # Convert from 0-31 scale to 0-100 scale for lionchief
+                    lionchief_speed = int((speed / 31) * 100)
+                    await self.train.motor.set_speed(lionchief_speed)
                 else:
                     logger.info(f"Mock: Setting speed to {speed}")
 
@@ -153,13 +152,14 @@ class TrainController:
 
                 if self.train and self.connected:
                     if direction == "toggle":
-                        await asyncio.to_thread(self.train.toggle_direction)
-                        self._current_direction = "reverse" if self._current_direction == "forward" else "forward"
+                        new_direction = "reverse" if self._current_direction == "forward" else "forward"
+                        await self.train.motor.set_movement_direction(new_direction == "forward")
+                        self._current_direction = new_direction
                     elif direction == "forward":
-                        await asyncio.to_thread(self.train.set_forward)
+                        await self.train.motor.set_movement_direction(True)
                         self._current_direction = "forward"
                     else:  # reverse
-                        await asyncio.to_thread(self.train.set_reverse)
+                        await self.train.motor.set_movement_direction(False)
                         self._current_direction = "reverse"
                 else:
                     logger.info(f"Mock: Setting direction to {direction}")
@@ -182,7 +182,10 @@ class TrainController:
         async with self._lock:
             try:
                 if self.train and self.connected:
-                    await asyncio.to_thread(self.train.blow_horn_one)
+                    # Turn horn on briefly then off
+                    await self.train.sound.set_horn(True)
+                    await asyncio.sleep(0.5)
+                    await self.train.sound.set_horn(False)
                 else:
                     logger.info("Mock: Blowing horn")
 
@@ -196,10 +199,7 @@ class TrainController:
         async with self._lock:
             try:
                 if self.train and self.connected:
-                    if state:
-                        await asyncio.to_thread(self.train.ring_bell)
-                    else:
-                        await asyncio.to_thread(self.train.stop_bell)
+                    await self.train.sound.set_bell(state)
                 else:
                     logger.info(f"Mock: Bell {'on' if state else 'off'}")
 
@@ -217,25 +217,7 @@ class TrainController:
         async with self._lock:
             try:
                 if self.train and self.connected:
-                    # Try different possible pyLionChief lighting methods
-                    try:
-                        if state:
-                            await asyncio.to_thread(self.train.set_lights, 1)
-                        else:
-                            await asyncio.to_thread(self.train.set_lights, 0)
-                    except AttributeError:
-                        # Try alternative method names
-                        try:
-                            if state:
-                                await asyncio.to_thread(self.train.cab_light_on)
-                            else:
-                                await asyncio.to_thread(self.train.cab_light_off)
-                        except AttributeError:
-                            logger.warning("Lighting control not available on this train model")
-                            return {
-                                "success": False,
-                                "message": "Lighting control not supported by this train"
-                            }
+                    await self.train.lighting.set_lights(state)
                 else:
                     logger.info(f"Mock: Lights {'on' if state else 'off'}")
 
@@ -253,7 +235,7 @@ class TrainController:
         async with self._lock:
             try:
                 if self.train and self.connected:
-                    await asyncio.to_thread(self.train.set_speed, 0)
+                    await self.train.motor.stop()
                 else:
                     logger.info("Mock: Emergency stop")
 
@@ -294,27 +276,26 @@ class TrainController:
         try:
             # Import pyLionChief discovery
             try:
-                from pyLionChief import discover_trains
+                from lionchief.connection import discover_trains
             except ImportError:
-                try:
-                    from pyLionChief.pyLionChief import discover_trains
-                except ImportError:
-                    logger.error("pyLionChief not available for train discovery")
-                    self._scanning = False
-                    return []
+                logger.error("pyLionChief not available for train discovery")
+                self._scanning = False
+                return []
 
-            logger.info(f"Starting train discovery scan for {scan_duration} seconds...")
+            logger.info(f"Starting train discovery scan...")
 
-            # Use pyLionChief's discover_trains function
-            discovered_devices = await asyncio.to_thread(discover_trains, scan_duration)
+            # Use pyLionChief's discover_trains function with retry enabled
+            discovered_connections = await discover_trains(retry=True, max_retries=5)
 
             # Convert to our format
-            for device in discovered_devices:
-                # pyLionChief returns devices with 'address' and 'name' keys
+            for connection in discovered_connections:
+                # lionchief returns LionChiefConnection objects
+                # The profile field contains the BLE device with address
                 train_info = {
-                    "address": device.get('address', device.get('addr', 'Unknown')),
-                    "name": device.get('name', 'LionChief Train'),
-                    "type": "LionChief Train"
+                    "address": str(connection.profile.address) if hasattr(connection.profile, 'address') else str(connection.profile),
+                    "name": connection.profile.name if hasattr(connection.profile, 'name') else 'LionChief Train',
+                    "type": "LionChief Train",
+                    "connection": connection  # Store the connection object for later use
                 }
                 self._discovered_trains.append(train_info)
                 logger.info(f"Discovered train: {train_info['name']} ({train_info['address']})")
@@ -358,20 +339,17 @@ class TrainController:
 
                 # Import pyLionChief
                 try:
-                    from pyLionChief import LionChiefEngine
+                    from lionchief.connection import LionChiefConnection
                 except ImportError:
-                    try:
-                        from pyLionChief.pyLionChief import LionChiefEngine
-                    except ImportError:
-                        return {
-                            "success": False,
-                            "message": "pyLionChief not available"
-                        }
+                    return {
+                        "success": False,
+                        "message": "pyLionChief not available"
+                    }
 
                 logger.info(f"Connecting to train at {address}")
                 self.train_address = address
-                self.train = LionChiefEngine(address)
-                await asyncio.to_thread(self.train.connect)
+                self.train = LionChiefConnection(address, {})
+                await self.train.connect()
                 self.connected = True
                 logger.info("Train connected successfully")
 
@@ -395,7 +373,7 @@ class TrainController:
         async with self._lock:
             try:
                 if self.train and self.connected:
-                    await asyncio.to_thread(self.train.disconnect)
+                    await self.train.disconnect()
                     self.connected = False
                     logger.info("Train disconnected")
             except Exception as e:
