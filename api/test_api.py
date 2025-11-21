@@ -9,11 +9,12 @@ import time
 
 BASE_URL = "http://localhost:8000"
 USER_ID = "test-user"
+USERNAME = "Test User"
 
 def join_queue():
     """Join the queue to get control"""
     print("👤 Joining queue...")
-    r = requests.post(f"{BASE_URL}/queue/join", json={"user_id": USER_ID})
+    r = requests.post(f"{BASE_URL}/queue/join", json={"user_id": USER_ID, "username": USERNAME})
     print(f"   Response: {r.json()}")
     print()
     return r.json()
