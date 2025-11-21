@@ -78,6 +78,7 @@ async def lifespan(app: FastAPI):
     if job_scheduler:
         await job_scheduler.stop()
     if train_controller:
+        await train_controller.stop_connection_manager()
         await train_controller.disconnect()
     logger.info("Train queue system shutdown complete")
 

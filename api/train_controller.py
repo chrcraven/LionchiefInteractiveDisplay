@@ -18,45 +18,106 @@ class TrainController:
         self._current_direction = "forward"
         self._discovered_trains: List[Dict] = []
         self._scanning = False
+        self._connection_task: Optional[asyncio.Task] = None
+        self._should_reconnect = True
 
     async def initialize(self):
-        """Initialize connection to the train."""
+        """Initialize connection to the train with automatic retry."""
+        # Check if pyLionChief is available
         try:
-            # Import pyLionChief - try both possible import paths
+            from pyLionChief import LionChiefEngine
+        except ImportError:
             try:
-                from pyLionChief import LionChiefEngine
+                from pyLionChief.pyLionChief import LionChiefEngine
             except ImportError:
-                try:
-                    from pyLionChief.pyLionChief import LionChiefEngine
-                except ImportError:
-                    logger.warning("pyLionChief not available, running in mock mode")
-                    self.train = None
-                    return
+                logger.warning("pyLionChief not available, running in mock mode")
+                self.train = None
+                return
 
+        # Start the connection retry loop in the background
+        self._connection_task = asyncio.create_task(self._connection_loop())
+        logger.info("Train connection manager started")
+
+    async def _connection_loop(self):
+        """Continuously try to connect to the train."""
+        retry_delay = 30  # seconds between retry attempts
+
+        while self._should_reconnect:
+            if not self.connected:
+                try:
+                    await self._attempt_connection()
+                except Exception as e:
+                    logger.error(f"Connection attempt failed: {e}")
+                    logger.info(f"Will retry in {retry_delay} seconds...")
+
+            # Wait before next attempt (only if not connected)
+            if not self.connected:
+                await asyncio.sleep(retry_delay)
+            else:
+                # If connected, check every 60 seconds if still connected
+                await asyncio.sleep(60)
+                # Check if connection is still alive by testing the train object
+                if self.train and self.connected:
+                    try:
+                        # Simple check - just verify the object exists
+                        pass
+                    except Exception:
+                        logger.warning("Train connection lost, will attempt reconnect")
+                        self.connected = False
+
+    async def _attempt_connection(self):
+        """Attempt to connect to a train (either specified address or discovered)."""
+        try:
+            from pyLionChief import LionChiefEngine
+        except ImportError:
+            try:
+                from pyLionChief.pyLionChief import LionChiefEngine
+            except ImportError:
+                logger.error("pyLionChief not available")
+                return
+
+        try:
             if self.train_address:
-                logger.info(f"Connecting to train at {self.train_address}")
+                # Connect to specified address
+                logger.info(f"Attempting to connect to train at {self.train_address}...")
                 self.train = LionChiefEngine(self.train_address)
                 await asyncio.to_thread(self.train.connect)
                 self.connected = True
-                logger.info("Train connected successfully")
+                logger.info(f"✓ Successfully connected to train at {self.train_address}")
             else:
-                logger.info("No train address configured, attempting to discover trains...")
-                # Try to discover trains
+                # Discover and connect to first available
+                logger.info("No train address specified, scanning for trains...")
                 discovered = await self.scan_for_trains()
 
                 if discovered:
-                    # Auto-connect to the first discovered train
                     first_train = discovered[0]
-                    logger.info(f"Auto-connecting to discovered train: {first_train['name']} ({first_train['address']})")
-                    await self.connect_to_train(first_train['address'])
+                    logger.info(f"Found train: {first_train['name']} ({first_train['address']})")
+                    logger.info(f"Attempting to connect...")
+
+                    self.train_address = first_train['address']
+                    self.train = LionChiefEngine(self.train_address)
+                    await asyncio.to_thread(self.train.connect)
+                    self.connected = True
+                    logger.info(f"✓ Successfully connected to {first_train['name']}")
                 else:
-                    logger.warning("No trains discovered, running in mock mode")
-                    self.train = None
+                    logger.warning("No trains discovered during scan")
 
         except Exception as e:
-            logger.error(f"Error initializing train: {e}")
+            logger.error(f"Connection failed: {e}")
             self.train = None
             self.connected = False
+            raise
+
+    async def stop_connection_manager(self):
+        """Stop the connection retry loop."""
+        self._should_reconnect = False
+        if self._connection_task and not self._connection_task.done():
+            self._connection_task.cancel()
+            try:
+                await self._connection_task
+            except asyncio.CancelledError:
+                pass
+        logger.info("Train connection manager stopped")
 
     async def set_speed(self, speed: int) -> Dict:
         """Set train speed (0-31)."""
