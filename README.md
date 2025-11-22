@@ -6,7 +6,6 @@ A queue-based train control system that allows multiple users to share control o
 
 - **Automatic Train Discovery**: No configuration needed! System automatically finds and connects to nearby LionChief trains
 - **Queue Management**: Fair FIFO queue system with configurable time slots
-- **Single User Infinite Mode**: If only one person is in the queue, they can control the train indefinitely
 - **Real-time Updates**: WebSocket-based live queue status and control updates
 - **Full Train Control**: Speed, direction, horn, and bell controls
 - **Emergency Stop**: Anyone in the queue can trigger an emergency stop
@@ -76,11 +75,9 @@ Edit the `.env` file to customize settings:
 # Train Bluetooth address (leave empty for mock mode)
 TRAIN_ADDRESS=AA:BB:CC:DD:EE:FF
 
-# Queue timeout in seconds (default: 300 = 5 minutes)
-TRAIN_QUEUE_TIMEOUT=300
-
-# Allow infinite control when only one user (default: true)
-TRAIN_ALLOW_INFINITE_SINGLE=true
+# Queue timeout in seconds (default: 60 = 1 minute)
+# Users must rejoin the queue after timeout, even if they are the only one
+TRAIN_QUEUE_TIMEOUT=60
 
 # API URL for UI to connect (update if using different host/port)
 API_URL=http://localhost:8000
@@ -125,7 +122,6 @@ curl http://localhost:8000/train/scan?duration=10
 
 - **Queue Settings**:
   - Adjust time limit per user (10-3600 seconds)
-  - Configure single-user infinite mode
 
 - **Train Controls Configuration**:
   - Enable/disable individual controls (speed, direction, horn, bell)
