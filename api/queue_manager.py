@@ -123,6 +123,13 @@ class QueueManager:
                 except Exception as e:
                     print(f"Error in analytics callback: {e}")
 
+            # Clean up train state if user was controlling
+            if was_controlling and self.train_controller:
+                try:
+                    await self.train_controller.end_session_cleanup()
+                except Exception as e:
+                    print(f"Error during session cleanup: {e}")
+
             # If the leaving user was controlling, assign to next
             if was_controlling:
                 self.current_controller = None
@@ -178,6 +185,13 @@ class QueueManager:
                     current_index = i
                     user.is_active = False
                     break
+
+            # Clean up train state before rotating to next user
+            if self.train_controller:
+                try:
+                    await self.train_controller.end_session_cleanup()
+                except Exception as e:
+                    print(f"Error during session cleanup on rotation: {e}")
 
             if current_index is not None:
                 # Move current controller to end of queue
