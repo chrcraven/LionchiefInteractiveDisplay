@@ -21,6 +21,14 @@
     </style>
 </head>
 <body data-theme="{{ theme_id }}">
+    <!-- Sticky Timer Banner (shown when user has control) -->
+    <div class="timer-banner" id="timerBanner" style="display: none;">
+        <div class="timer-banner-content">
+            <span class="timer-banner-label">Time Remaining:</span>
+            <span class="timer-banner-value" id="timerBannerValue">-</span>
+        </div>
+    </div>
+
     <div class="container">
         <header>
             <h1>🚂 {{ theme.name }}</h1>
