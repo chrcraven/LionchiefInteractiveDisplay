@@ -21,6 +21,8 @@ class TrainController:
         self._scanning = False
         self._connection_task: Optional[asyncio.Task] = None
         self._should_reconnect = True
+        self._last_command_time = 0  # Track when we last sent a command
+        self._disconnect_detected = False  # Flag for voluntary disconnects
 
     async def initialize(self):
         """Initialize connection to the train with automatic retry."""
@@ -41,8 +43,9 @@ class TrainController:
         base_retry_delay = 30  # base seconds between retry attempts
         max_retry_delay = 120  # maximum retry delay
         current_retry_delay = base_retry_delay
-        health_check_interval = 20  # seconds between health checks when connected
-        keepalive_interval = 30  # seconds between keepalive messages
+        health_check_interval = 15  # seconds between health checks when connected
+        keepalive_interval = 25  # seconds between keepalive messages
+        activity_timeout = 300  # 5 minutes - stop keepalive after this much inactivity
 
         last_keepalive = 0
         consecutive_failures = 0
@@ -83,23 +86,34 @@ class TrainController:
                         # Check the actual BLE connection status
                         if hasattr(self.train, 'train') and hasattr(self.train.train, 'is_connected'):
                             if not self.train.train.is_connected:
-                                logger.warning("BLE connection lost, will attempt reconnect")
+                                logger.warning("BLE connection lost (train voluntarily disconnected)")
                                 self.connected = False
+                                self._disconnect_detected = True
                                 self.train = None
                                 continue
 
-                        # Send keepalive to prevent timeout (maintain speed or send status request)
                         current_time = time.time()
-                        if current_time - last_keepalive > keepalive_interval:
-                            # Send a harmless command to keep connection alive
-                            # Just re-set the current speed
-                            await self.train.motor.set_speed(int((self._current_speed / 31) * 100))
-                            last_keepalive = current_time
-                            logger.debug("Keepalive message sent")
+                        time_since_last_command = current_time - self._last_command_time
+
+                        # Only send keepalive if there was recent user activity
+                        # This prevents keepalive from affecting train state (like lights) during idle periods
+                        if time_since_last_command < activity_timeout:
+                            if current_time - last_keepalive > keepalive_interval:
+                                # Send keepalive only if train is moving (speed > 0)
+                                # This prevents waking up stopped trains and affecting lights/state
+                                if self._current_speed > 0:
+                                    await self.train.motor.set_speed(int((self._current_speed / 31) * 100))
+                                    logger.debug(f"Keepalive sent (speed={self._current_speed})")
+                                    last_keepalive = current_time
+                        else:
+                            # No recent activity - allow train to disconnect naturally
+                            # We'll reconnect on the next command
+                            logger.debug(f"No activity for {int(time_since_last_command)}s, allowing natural disconnect")
 
                     except Exception as e:
                         logger.warning(f"Connection health check failed: {e}, will attempt reconnect")
                         self.connected = False
+                        self._disconnect_detected = True
                         self.train = None
 
     def _on_disconnect_callback(self, client):
@@ -203,6 +217,9 @@ class TrainController:
                 if speed < 0 or speed > 31:
                     return {"success": False, "message": "Speed must be between 0 and 31"}
 
+                # Track user activity
+                self._last_command_time = time.time()
+
                 # Verify connection before sending command
                 if self._verify_connection():
                     # Convert from 0-31 scale to 0-100 scale for lionchief
@@ -231,6 +248,9 @@ class TrainController:
                         "success": False,
                         "message": "Direction must be 'forward', 'reverse', or 'toggle'"
                     }
+
+                # Track user activity
+                self._last_command_time = time.time()
 
                 # Verify connection before sending command
                 if self._verify_connection():
@@ -265,6 +285,9 @@ class TrainController:
         """Blow the train horn."""
         async with self._lock:
             try:
+                # Track user activity
+                self._last_command_time = time.time()
+
                 # Verify connection before sending command
                 if self._verify_connection():
                     # Turn horn on briefly then off
@@ -284,6 +307,9 @@ class TrainController:
         """Ring the train bell."""
         async with self._lock:
             try:
+                # Track user activity
+                self._last_command_time = time.time()
+
                 # Verify connection before sending command
                 if self._verify_connection():
                     await self.train.sound.set_bell(state)
@@ -304,6 +330,9 @@ class TrainController:
         """Control the train lights."""
         async with self._lock:
             try:
+                # Track user activity
+                self._last_command_time = time.time()
+
                 # Verify connection before sending command
                 if self._verify_connection():
                     await self.train.lighting.set_lights(state)
@@ -324,6 +353,9 @@ class TrainController:
         """Emergency stop the train."""
         async with self._lock:
             try:
+                # Track user activity
+                self._last_command_time = time.time()
+
                 # Verify connection before sending command
                 if self._verify_connection():
                     await self.train.motor.stop()
