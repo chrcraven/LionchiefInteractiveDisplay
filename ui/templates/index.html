@@ -147,7 +147,8 @@
     </div>
 
     <script>
-        const API_URL = "{{ api_url }}";
+        // API calls now go through Flask proxy (no direct API access needed)
+        // This eliminates CORS and private network access issues
     </script>
     <script src="/static/app.js"></script>
 </body>

@@ -1013,7 +1013,8 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
     </div>
 
     <script>
-        const API_URL = "{{ api_url }}";
+        // API calls now go through Flask proxy (no direct API access needed)
+        // This eliminates CORS and private network access issues
 
         // Tab switching
         function switchTab(tabName) {
@@ -1058,7 +1059,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
         // Load queue configuration
         async function loadQueueConfig() {
             try {
-                const response = await fetch(API_URL + '/config');
+                const response = await fetch('/api/config');
                 const data = await response.json();
                 document.getElementById('queueTimeoutInput').value = data.queue_timeout;
             } catch (error) {
@@ -1076,7 +1077,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch(API_URL + '/config', {
+                const response = await fetch('/api/config', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1100,7 +1101,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
         // Load control settings
         async function loadControls() {
             try {
-                const response = await fetch(API_URL + '/controls');
+                const response = await fetch('/api/controls');
                 const data = await response.json();
 
                 // Update checkboxes
@@ -1128,7 +1129,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             };
 
             try {
-                const response = await fetch(API_URL + '/controls', {
+                const response = await fetch('/api/controls', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1156,7 +1157,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
         // Analytics functions
         async function loadAnalytics() {
             try {
-                const response = await fetch(API_URL + '/analytics/stats');
+                const response = await fetch('/api/analytics/stats');
                 const stats = await response.json();
 
                 // Update stats cards
@@ -1187,7 +1188,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
 
         async function loadControlUsage() {
             try {
-                const response = await fetch(API_URL + '/analytics/controls');
+                const response = await fetch('/api/analytics/controls');
                 const data = await response.json();
 
                 const container = document.getElementById('control-usage-chart');
@@ -1325,7 +1326,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch(API_URL + '/analytics/cleanup?days=' + days, {
+                const response = await fetch('/api/analytics/cleanup?days=' + days, {
                     method: 'DELETE'
                 });
 
@@ -1358,7 +1359,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
         // Profanity Filter functions
         async function loadProfanityFilter() {
             try {
-                const response = await fetch(API_URL + '/profanity-filter');
+                const response = await fetch('/api/profanity-filter');
                 const data = await response.json();
 
                 const container = document.getElementById('blocked-words-list');
@@ -1404,7 +1405,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch(API_URL + '/profanity-filter/add?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
+                const response = await fetch('/api/profanity-filter/add?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
                     method: 'POST'
                 });
 
@@ -1436,7 +1437,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch(API_URL + '/profanity-filter/remove?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
+                const response = await fetch('/api/profanity-filter/remove?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
                     method: 'DELETE'
                 });
 
@@ -1467,7 +1468,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch(API_URL + '/profanity-filter/reset?admin_password=' + encodeURIComponent(password), {
+                const response = await fetch('/api/profanity-filter/reset?admin_password=' + encodeURIComponent(password), {
                     method: 'POST'
                 });
 
@@ -1506,7 +1507,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
         // Job Scheduler functions
         async function loadJobs() {
             try {
-                const response = await fetch(API_URL + '/jobs');
+                const response = await fetch('/api/jobs');
                 const data = await response.json();
 
                 const container = document.getElementById('jobs-list');
@@ -1606,14 +1607,14 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
                 let response;
                 if (jobId) {
                     // Update existing job
-                    response = await fetch(API_URL + '/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
+                    response = await fetch('/api/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
                         method: 'PUT',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(jobData)
                     });
                 } else {
                     // Create new job
-                    response = await fetch(API_URL + '/jobs?admin_password=' + encodeURIComponent(password), {
+                    response = await fetch('/api/jobs?admin_password=' + encodeURIComponent(password), {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(jobData)
@@ -1663,7 +1664,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch(API_URL + '/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
+                const response = await fetch('/api/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
                     method: 'DELETE'
                 });
 
@@ -1689,7 +1690,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch(API_URL + '/jobs/' + jobId + '/run?admin_password=' + encodeURIComponent(password), {
+                const response = await fetch('/api/jobs/' + jobId + '/run?admin_password=' + encodeURIComponent(password), {
                     method: 'POST'
                 });
 
