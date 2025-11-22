@@ -38,39 +38,41 @@ def get_train_status():
     return r.json()
 
 def test_speed_range():
-    """Test full speed range (0-100)"""
+    """Test full speed range (-100 to 100)"""
     print("\n" + "="*60)
-    print("TESTING SPEED CONTROL (0-100)")
+    print("TESTING SPEED CONTROL (-100 to 100)")
     print("="*60)
 
-    # Test minimum speed
+    # Test stop
     print("🚂 Setting speed to 0 (stop)...")
     r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": 0})
     print(f"   {r.json()}")
     time.sleep(1)
 
-    # Test low speeds
-    for speed in [10, 20, 30]:
-        print(f"🚂 Setting speed to {speed}...")
+    # Test forward speeds (positive)
+    print("\n--- FORWARD SPEEDS (positive values) ---")
+    for speed in [10, 30, 50, 70, 100]:
+        print(f"🚂 Setting speed to {speed} (forward)...")
         r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": speed})
         print(f"   {r.json()}")
         time.sleep(2)
 
-    # Test medium speeds
-    for speed in [50, 70]:
-        print(f"🚂 Setting speed to {speed}...")
-        r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": speed})
-        print(f"   {r.json()}")
-        time.sleep(2)
-
-    # Test maximum speed (briefly)
-    print(f"🚂 Setting speed to 100 (max)...")
-    r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": 100})
+    # Stop
+    print("\n🚂 Stopping (speed 0)...")
+    r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": 0})
     print(f"   {r.json()}")
-    time.sleep(2)
+    time.sleep(1)
+
+    # Test reverse speeds (negative)
+    print("\n--- REVERSE SPEEDS (negative values) ---")
+    for speed in [-10, -30, -50, -70, -100]:
+        print(f"🚂 Setting speed to {speed} (reverse)...")
+        r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": speed})
+        print(f"   {r.json()}")
+        time.sleep(2)
 
     # Return to stop
-    print(f"🚂 Stopping (speed 0)...")
+    print("\n🚂 Final stop (speed 0)...")
     r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": 0})
     print(f"   {r.json()}")
     time.sleep(1)
@@ -230,21 +232,27 @@ def test_invalid_inputs():
     print("TESTING ERROR HANDLING (Invalid Inputs)")
     print("="*60)
 
-    # Invalid speed (too high)
+    # Invalid speed (too high positive)
     print("❌ Testing invalid speed (101)...")
     r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": 101})
     print(f"   {r.status_code}: {r.json()}")
     time.sleep(1)
 
-    # Invalid speed (way too high)
+    # Invalid speed (way too high positive)
     print("❌ Testing invalid speed (150)...")
     r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": 150})
     print(f"   {r.status_code}: {r.json()}")
     time.sleep(1)
 
-    # Invalid speed (negative)
-    print("❌ Testing invalid speed (-5)...")
-    r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": -5})
+    # Invalid speed (too low negative)
+    print("❌ Testing invalid speed (-101)...")
+    r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": -101})
+    print(f"   {r.status_code}: {r.json()}")
+    time.sleep(1)
+
+    # Invalid speed (way too low negative)
+    print("❌ Testing invalid speed (-150)...")
+    r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": -150})
     print(f"   {r.status_code}: {r.json()}")
     time.sleep(1)
 

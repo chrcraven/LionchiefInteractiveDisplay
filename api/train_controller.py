@@ -203,22 +203,43 @@ class TrainController:
             return False
 
     async def set_speed(self, speed: int) -> Dict:
-        """Set train speed (0-100)."""
+        """
+        Set train speed (-100 to 100).
+        Positive values move forward, negative values move reverse, 0 stops.
+        """
         async with self._lock:
             try:
-                if speed < 0 or speed > 100:
-                    return {"success": False, "message": "Speed must be between 0 and 100"}
+                if speed < -100 or speed > 100:
+                    return {"success": False, "message": "Speed must be between -100 and 100"}
 
                 # Track user activity
                 self._last_command_time = time.time()
 
+                # Determine direction and actual speed from signed value
+                if speed > 0:
+                    direction = "forward"
+                    actual_speed = speed
+                elif speed < 0:
+                    direction = "reverse"
+                    actual_speed = abs(speed)
+                else:  # speed == 0
+                    # Just stop, don't change direction
+                    actual_speed = 0
+                    direction = None
+
                 # Verify connection before sending command
                 if self._verify_connection():
-                    await self.train.motor.set_speed(speed)
-                else:
-                    logger.info(f"Mock: Setting speed to {speed}")
+                    # Set direction if needed (skip for speed 0)
+                    if direction:
+                        await self.train.motor.set_movement_direction(direction == "forward")
+                        self._current_direction = direction
 
-                self._current_speed = speed
+                    # Set the actual speed
+                    await self.train.motor.set_speed(actual_speed)
+                else:
+                    logger.info(f"Mock: Setting speed to {speed} ({direction if direction else 'stop'})")
+
+                self._current_speed = actual_speed  # Store absolute value
                 return {
                     "success": True,
                     "message": f"Speed set to {speed}",

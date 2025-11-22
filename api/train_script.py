@@ -26,7 +26,7 @@ class TrainScriptInterpreter:
     Interpreter for train control scripts.
 
     Supported commands:
-    - speed <0-100>         : Set train speed
+    - speed <-100 to 100>   : Set train speed (positive=forward, negative=reverse, 0=stop)
     - forward               : Set direction forward
     - reverse               : Set direction reverse
     - toggle                : Toggle direction
@@ -114,7 +114,7 @@ class TrainScriptInterpreter:
     def _validate_command(self, command: str, args: List[str], line_num: int):
         """Validate command syntax."""
         valid_commands = {
-            'speed': 1,      # speed <0-100>
+            'speed': 1,      # speed <-100 to 100>
             'forward': 0,    # forward
             'reverse': 0,    # reverse
             'toggle': 0,     # toggle
@@ -141,11 +141,11 @@ class TrainScriptInterpreter:
         if command == 'speed':
             try:
                 speed = int(args[0])
-                if not 0 <= speed <= 100:
+                if not -100 <= speed <= 100:
                     raise ValueError()
             except ValueError:
                 raise TrainScriptError(
-                    f"Line {line_num}: Speed must be integer 0-100, got '{args[0]}'"
+                    f"Line {line_num}: Speed must be integer -100 to 100, got '{args[0]}'"
                 )
 
         elif command == 'bell':
