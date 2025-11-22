@@ -8,8 +8,7 @@ class AppConfig(BaseModel):
     """Application configuration."""
     model_config = ConfigDict(extra='forbid')
 
-    queue_timeout: int = 300  # Default 5 minutes in seconds
-    allow_infinite_single_user: bool = True
+    queue_timeout: int = 60  # Default 1 minute in seconds
     idle_timeout: int = 600  # Default 10 minutes in seconds before auto-turning off lights
     train_address: Optional[str] = None  # LionChief train BLE address
     server_host: str = "0.0.0.0"
@@ -18,8 +17,7 @@ class AppConfig(BaseModel):
 
 # Global configuration instance
 config = AppConfig(
-    queue_timeout=int(os.getenv("TRAIN_QUEUE_TIMEOUT", "300")),
-    allow_infinite_single_user=os.getenv("TRAIN_ALLOW_INFINITE_SINGLE", "true").lower() == "true",
+    queue_timeout=int(os.getenv("TRAIN_QUEUE_TIMEOUT", "60")),
     idle_timeout=int(os.getenv("TRAIN_IDLE_TIMEOUT", "600")),
     train_address=os.getenv("TRAIN_ADDRESS"),
     server_host=os.getenv("TRAIN_SERVER_HOST", "0.0.0.0"),

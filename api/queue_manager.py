@@ -19,10 +19,9 @@ class QueueUser:
 class QueueManager:
     """Manages the queue for train control."""
 
-    def __init__(self, queue_timeout: int = 300, allow_infinite_single: bool = True,
+    def __init__(self, queue_timeout: int = 60,
                  idle_timeout: int = 600, train_controller=None):
         self.queue_timeout = queue_timeout
-        self.allow_infinite_single = allow_infinite_single
         self.idle_timeout = idle_timeout  # Time in seconds before turning off lights when idle
         self.train_controller = train_controller
         self.queue: List[QueueUser] = []
@@ -160,9 +159,8 @@ class QueueManager:
         if self._timer_task and not self._timer_task.done():
             self._timer_task.cancel()
 
-        # Start timer if there are other users waiting
-        if len(self.queue) > 1:
-            self._timer_task = asyncio.create_task(self._control_timer())
+        # Always start timer - users must rejoin queue after timeout
+        self._timer_task = asyncio.create_task(self._control_timer())
 
     async def _control_timer(self):
         """Timer to rotate control."""
@@ -211,11 +209,7 @@ class QueueManager:
             time_remaining = None
             if user.is_active and user.control_started_at:
                 elapsed = time.time() - user.control_started_at
-                # If only one user and infinite mode is enabled
-                if len(self.queue) == 1 and self.allow_infinite_single:
-                    time_remaining = -1  # Infinite
-                else:
-                    time_remaining = max(0, self.queue_timeout - elapsed)
+                time_remaining = max(0, self.queue_timeout - elapsed)
 
             queue_list.append({
                 "user_id": user.user_id,

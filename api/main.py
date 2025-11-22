@@ -46,7 +46,6 @@ async def lifespan(app: FastAPI):
     # Initialize queue manager with train controller reference
     queue_manager = QueueManager(
         queue_timeout=config.queue_timeout,
-        allow_infinite_single=config.allow_infinite_single_user,
         idle_timeout=config.idle_timeout,
         train_controller=train_controller
     )
@@ -439,7 +438,6 @@ async def get_config():
     """Get current configuration."""
     return {
         "queue_timeout": config.queue_timeout,
-        "allow_infinite_single_user": config.allow_infinite_single_user,
         "train_address": config.train_address,
     }
 
