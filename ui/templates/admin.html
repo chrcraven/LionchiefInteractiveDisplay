@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Admin Control Panel - LionChief</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-top: 10px;
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .control-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .control-description {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #10b981;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .config-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .config-item label {
+            flex: 0 0 auto;
+            font-weight: 600;
+        }
+
+        .config-item input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            color: #1e40af;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .password-field {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .password-field input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .message.error {
+            background: #ef4444;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6b7280;
+            transition: all 0.3s;
+        }
+
+        .nav-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Analytics Styles */
+        .stat-card {
+            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .chart-label {
+            width: 120px;
+            font-weight: 600;
+            color: #374151;
+            text-transform: capitalize;
+        }
+
+        .chart-bar-outer {
+            flex: 1;
+            height: 30px;
+            background: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chart-bar-inner {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+        }
+
+        .chart-bar-value {
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .stats-list {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 8px;
+        }
+
+        .stats-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .stats-item-label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .stats-item-value {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        /* Mobile-First Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                -webkit-tap-highlight-color: transparent;
+                -webkit-touch-callout: none;
+            }
+
+            .container {
+                max-width: 100%;
+            }
+
+            header {
+                padding: 16px;
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            h2 {
+                font-size: 1.2em;
+            }
+
+            h3 {
+                font-size: 1.1em;
+            }
+
+            .tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+
+            .tab {
+                padding: 12px 16px;
+                font-size: 14px;
+                white-space: nowrap;
+                min-height: 44px;
+            }
+
+            .section {
+                padding: 14px;
+                margin-bottom: 12px;
+            }
+
+            button, input[type="submit"] {
+                min-height: 48px;
+                padding: 14px 20px;
+                font-size: 16px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            input[type="text"],
+            input[type="password"],
+            input[type="number"],
+            textarea,
+            select {
+                min-height: 48px;
+                padding: 14px;
+                font-size: 16px;
+                -webkit-user-select: text;
+                user-select: text;
+            }
+
+            textarea {
+                min-height: 200px;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .form-group {
+                margin-bottom: 16px;
+            }
+
+            .form-group label {
+                margin-bottom: 8px;
+                font-size: 15px;
+            }
+
+            .chart-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                margin-bottom: 16px;
+            }
+
+            .chart-label {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+
+            .chart-bar-outer {
+                width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .stat-card {
+                padding: 16px;
+            }
+
+            table {
+                font-size: 14px;
+            }
+
+            table th, table td {
+                padding: 10px 8px;
+            }
+
+            /* Scrollable tables on mobile */
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Better spacing for buttons */
+            .button-group {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .button-group button {
+                width: 100%;
+            }
+        }
+
+        /* Extra small devices */
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            h1 {
+                font-size: 1.3em;
+            }
+
+            header {
+                padding: 12px;
+            }
+
+            .section {
+                padding: 12px;
+            }
+
+            .tab {
+                font-size: 13px;
+                padding: 10px 14px;
+            }
+        }
+
+        /* Landscape mobile */
+        @media (max-width: 896px) and (orientation: landscape) {
+            body {
+                padding: 8px;
+            }
+
+            header {
+                padding: 12px;
+            }
+
+            h1 {
+                font-size: 1.3em;
+            }
+
+            .section {
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Admin Control Panel</h1>
+            <p class="subtitle">Configure queue settings and train controls</p>
+            <a href="/" class="back-link">← Back to Train Control</a>
+        </header>
+
+        <div class="section">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchTab('queue')">Queue Settings</button>
+                <button class="nav-tab" onclick="switchTab('controls')">Train Controls</button>
+                <button class="nav-tab" onclick="switchTab('scheduler')">Job Scheduler</button>
+                <button class="nav-tab" onclick="switchTab('analytics')">Analytics</button>
+                <button class="nav-tab" onclick="switchTab('filter')">Profanity Filter</button>
+                <button class="nav-tab" onclick="switchTab('theme')">Theme</button>
+            </div>
+
+            <!-- Queue Settings Tab -->
+            <div id="queue-tab" class="tab-content active">
+                <h2>Queue Configuration</h2>
+                <div class="alert alert-info">
+                    <strong>Note:</strong> If only one person is in the queue, they can control the train indefinitely regardless of timeout setting.
+                </div>
+
+                <div class="config-item">
+                    <label for="queueTimeoutInput">Queue Timeout (seconds):</label>
+                    <input type="number" id="queueTimeoutInput" min="10" max="3600" value="300">
+                    <button class="btn btn-primary" onclick="updateQueueTimeout()">Update</button>
+                </div>
+            </div>
+
+            <!-- Train Controls Tab -->
+            <div id="controls-tab" class="tab-content">
+                <h2>Available Train Controls</h2>
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> Disabling controls will prevent users from accessing them. An admin password is required to change these settings.
+                </div>
+
+                <div class="password-field">
+                    <input type="password" id="adminPassword" placeholder="Admin Password (leave empty if not set)">
+                </div>
+
+                <div class="control-item">
+                    <div>
+                        <div class="control-label">Speed Control</div>
+                        <div class="control-description">Allow users to control train speed</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="control-speed" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-item">
+                    <div>
+                        <div class="control-label">Direction Control</div>
+                        <div class="control-description">Allow users to change train direction</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="control-direction" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-item">
+                    <div>
+                        <div class="control-label">Horn Control</div>
+                        <div class="control-description">Allow users to blow the train horn</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="control-horn" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-item">
+                    <div>
+                        <div class="control-label">Bell Control</div>
+                        <div class="control-description">Allow users to ring the train bell</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="control-bell" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-item">
+                    <div>
+                        <div class="control-label">Emergency Stop - All Users</div>
+                        <div class="control-description">Allow anyone in queue to trigger emergency stop (default: only current controller + admin)</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="control-emergency_stop_all">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <button class="btn btn-success" onclick="saveControls()">Save Control Settings</button>
+            </div>
+
+            <!-- Job Scheduler Tab -->
+            <div id="scheduler-tab" class="tab-content">
+                <h2>Job Scheduler</h2>
+                <div class="alert alert-info">
+                    <strong>Info:</strong> Schedule automated train sequences using cron expressions. Write scripts using simple commands like <code>speed</code>, <code>horn</code>, <code>bell</code>, <code>wait</code>, etc.
+                </div>
+
+                <div class="password-field">
+                    <input type="password" id="schedulerAdminPassword" placeholder="Admin Password (required for changes)">
+                </div>
+
+                <!-- Scripting Language Documentation -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 10px; cursor: pointer;" onclick="toggleScriptDocs()">
+                        📖 Scripting Language Reference
+                        <span id="scriptDocsToggle" style="font-size: 14px; color: #6b7280;"> (click to expand)</span>
+                    </h3>
+                    <div id="scriptDocs" style="display: none; background: #f9fafb; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <h4 style="margin-top: 0; color: #667eea;">Train Control Commands</h4>
+
+                        <div style="margin-bottom: 20px;">
+                            <h5 style="color: #374151; margin-bottom: 10px;">Movement Commands</h5>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">speed &lt;0-31&gt;</td>
+                                    <td style="padding: 8px; color: #6b7280;">Set train speed (0=stop, 31=maximum)</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">forward</td>
+                                    <td style="padding: 8px; color: #6b7280;">Set direction to forward</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">reverse</td>
+                                    <td style="padding: 8px; color: #6b7280;">Set direction to reverse</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">toggle</td>
+                                    <td style="padding: 8px; color: #6b7280;">Toggle direction (forward ↔ reverse)</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <h5 style="color: #374151; margin-bottom: 10px;">Sound Commands</h5>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">horn</td>
+                                    <td style="padding: 8px; color: #6b7280;">Blow the train horn</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">bell on</td>
+                                    <td style="padding: 8px; color: #6b7280;">Turn bell on</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">bell off</td>
+                                    <td style="padding: 8px; color: #6b7280;">Turn bell off</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <h5 style="color: #374151; margin-bottom: 10px;">Lighting Commands</h5>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">lights on</td>
+                                    <td style="padding: 8px; color: #6b7280;">Turn train lights on</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">lights off</td>
+                                    <td style="padding: 8px; color: #6b7280;">Turn train lights off</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <h5 style="color: #374151; margin-bottom: 10px;">Control Flow</h5>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">wait &lt;seconds&gt;</td>
+                                    <td style="padding: 8px; color: #6b7280;">Pause execution (supports decimals, e.g., 0.5)</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">repeat &lt;n&gt; times</td>
+                                    <td style="padding: 8px; color: #6b7280;">Start a loop that repeats n times</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;">end</td>
+                                    <td style="padding: 8px; color: #6b7280;">End a repeat loop</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 8px; font-family: monospace; font-weight: 600;"># comment</td>
+                                    <td style="padding: 8px; color: #6b7280;">Comments are ignored (must start line)</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <h4 style="color: #667eea; margin-bottom: 10px;">Example Scripts</h4>
+
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: #374151;">Simple Demonstration:</strong>
+                            <pre style="background: white; padding: 10px; border-radius: 5px; overflow-x: auto; margin-top: 5px;"><code># Start from stop
+speed 0
+bell on
+lights on
+wait 2
+
+# Accelerate forward
+forward
+speed 10
+wait 3
+speed 20
+wait 3
+
+# Horn and slow down
+horn
+wait 1
+speed 10
+wait 2
+speed 0
+bell off
+lights off</code></pre>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: #374151;">Back and Forth Pattern:</strong>
+                            <pre style="background: white; padding: 10px; border-radius: 5px; overflow-x: auto; margin-top: 5px;"><code># Repeat pattern 3 times
+repeat 3 times
+    forward
+    speed 15
+    wait 5
+    speed 0
+    wait 1
+
+    reverse
+    speed 15
+    wait 5
+    speed 0
+    wait 1
+end
+
+# Final horn
+horn
+wait 0.5
+horn</code></pre>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: #374151;">Nested Loops:</strong>
+                            <pre style="background: white; padding: 10px; border-radius: 5px; overflow-x: auto; margin-top: 5px;"><code># Complex pattern with nested loops
+repeat 2 times
+    forward
+    speed 20
+
+    # Horn sequence
+    repeat 3 times
+        horn
+        wait 0.5
+    end
+
+    wait 3
+    speed 0
+    wait 1
+end</code></pre>
+                        </div>
+
+                        <div style="background: #fef3c7; padding: 10px; border-radius: 5px; border-left: 4px solid #f59e0b; margin-top: 15px;">
+                            <strong style="color: #92400e;">💡 Tips:</strong>
+                            <ul style="margin: 5px 0 0 20px; color: #92400e;">
+                                <li>Use comments (#) to document your scripts</li>
+                                <li>Scripts are validated before saving</li>
+                                <li>Test scripts with "Run Now" before scheduling</li>
+                                <li>One command per line</li>
+                                <li>Indentation is optional but improves readability</li>
+                                <li>All loops must have matching "end" statements</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Create/Edit Job Form -->
+                <div style="margin-bottom: 30px;">
+                    <h3 id="jobFormTitle" style="margin-bottom: 15px;">Create New Job</h3>
+                    <input type="hidden" id="editingJobId" value="">
+
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <label style="font-weight: 600; margin-bottom: 5px; display: block;">Job Name:</label>
+                            <input type="text" id="jobName" placeholder="e.g., Morning Show" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 5px;">
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; margin-bottom: 5px; display: block;">Description:</label>
+                            <input type="text" id="jobDescription" placeholder="e.g., Runs every morning at 9 AM" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 5px;">
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; margin-bottom: 5px; display: block;">
+                                Cron Expression:
+                                <span style="font-weight: normal; color: #6b7280; font-size: 14px;">(minute hour day month weekday)</span>
+                            </label>
+                            <input type="text" id="jobCron" placeholder="0 9 * * *" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 5px;">
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">
+                                Examples: <code>0 9 * * *</code> (daily at 9 AM), <code>*/15 * * * *</code> (every 15 min), <code>0 */2 * * *</code> (every 2 hours)
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; margin-bottom: 5px; display: block;">Train Script:</label>
+                            <textarea id="jobScript" rows="15" placeholder="# Example script
+speed 0
+bell on
+wait 2
+speed 15
+forward
+wait 5
+horn
+wait 2
+speed 0
+bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 5px; font-family: monospace; font-size: 14px;"></textarea>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">
+                                Commands: <code>speed 0-31</code>, <code>forward</code>, <code>reverse</code>, <code>toggle</code>, <code>horn</code>,
+                                <code>bell on/off</code>, <code>wait seconds</code>, <code>repeat N times ... end</code>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" onclick="saveJob()">Save Job</button>
+                            <button class="btn btn-secondary" onclick="cancelEdit()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jobs List -->
+                <div>
+                    <h3 style="margin-bottom: 15px;">Scheduled Jobs</h3>
+                    <div id="jobs-list" class="stats-list" style="max-height: 500px;"></div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content">
+                <h2>Usage Analytics</h2>
+
+                <!-- Stats Overview -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Sessions</div>
+                        <div class="stat-value" id="stat-total-sessions">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Unique Users</div>
+                        <div class="stat-value" id="stat-unique-users">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Wait Time</div>
+                        <div class="stat-value" id="stat-avg-wait">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Session Time</div>
+                        <div class="stat-value" id="stat-avg-session">-</div>
+                    </div>
+                </div>
+
+                <!-- Control Usage Breakdown -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Control Usage Breakdown</h3>
+                    <div id="control-usage-chart" class="chart-container"></div>
+                </div>
+
+                <!-- Peak Hours -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Peak Hours (Last 7 Days)</h3>
+                    <div id="peak-hours-list" class="stats-list"></div>
+                </div>
+
+                <!-- Top Users -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Top Users</h3>
+                    <div id="top-users-list" class="stats-list"></div>
+                </div>
+
+                <!-- Recent Sessions -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Recent Sessions</h3>
+                    <div id="recent-sessions-list" class="stats-list"></div>
+                </div>
+
+                <!-- Data Management -->
+                <div>
+                    <h3 style="margin-bottom: 15px;">Data Management</h3>
+                    <p style="color: #6b7280; margin-bottom: 15px;">Clear old analytics data to free up space. This action cannot be undone.</p>
+                    <button class="btn btn-secondary" onclick="cleanupAnalytics(90)">Clear Data Older Than 90 Days</button>
+                </div>
+            </div>
+
+            <!-- Profanity Filter Tab -->
+            <div id="filter-tab" class="tab-content">
+                <h2>Profanity Filter</h2>
+                <div class="alert alert-info">
+                    <strong>Info:</strong> The profanity filter uses the <strong>Purgomalum online API</strong> to automatically detect inappropriate usernames. You can add custom blocked words below for additional filtering.
+                </div>
+
+                <div class="password-field">
+                    <input type="password" id="filterAdminPassword" placeholder="Admin Password (required for changes)">
+                </div>
+
+                <!-- Add New Word -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Add Custom Blocked Word</h3>
+                    <p style="color: #6b7280; margin-bottom: 10px; font-size: 14px;">
+                        Add specific words or phrases that should be blocked in addition to the automatic online filter.
+                    </p>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="newBlockedWord" placeholder="Enter word to block" style="flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: 5px;">
+                        <button class="btn btn-primary" onclick="addBlockedWord()">Add Word</button>
+                    </div>
+                </div>
+
+                <!-- Blocked Words List -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Custom Blocked Words</h3>
+                    <p style="color: #6b7280; margin-bottom: 10px; font-size: 14px;">
+                        These are additional words you've added on top of the automatic online filter.
+                    </p>
+                    <div id="blocked-words-list" class="stats-list" style="max-height: 400px;"></div>
+                </div>
+
+                <!-- Reset to Defaults -->
+                <div>
+                    <h3 style="margin-bottom: 15px;">Clear Custom Words</h3>
+                    <p style="color: #6b7280; margin-bottom: 15px;">Remove all custom blocked words. The online API filter will still be active.</p>
+                    <button class="btn btn-secondary" onclick="resetProfanityFilter()">Clear All Custom Words</button>
+                </div>
+            </div>
+
+            <!-- Theme Tab -->
+            <div id="theme-tab" class="tab-content">
+                <h2>Theme Selection</h2>
+                <div class="alert alert-info">
+                    <strong>Tip:</strong> Use the <a href="/secret-admin-theme-selector" style="color: #1e40af; font-weight: 600;">dedicated theme selector page</a> for a better experience with visual previews.
+                </div>
+                <p>Visit the theme selector page to choose from 25+ pre-configured themes matching popular Lionel train sets.</p>
+                <br>
+                <a href="/secret-admin-theme-selector" class="btn btn-primary">Open Theme Selector</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "{{ api_url }}";
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+
+            // Load data for the tab
+            if (tabName === 'queue') {
+                loadQueueConfig();
+            } else if (tabName === 'controls') {
+                loadControls();
+            } else if (tabName === 'scheduler') {
+                loadJobs();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
+            } else if (tabName === 'filter') {
+                loadProfanityFilter();
+            }
+        }
+
+        // Show message
+        function showMessage(text, type = 'success') {
+            const message = document.createElement('div');
+            message.className = 'message' + (type === 'error' ? ' error' : '');
+            message.textContent = text;
+            document.body.appendChild(message);
+
+            setTimeout(() => {
+                document.body.removeChild(message);
+            }, 3000);
+        }
+
+        // Load queue configuration
+        async function loadQueueConfig() {
+            try {
+                const response = await fetch(API_URL + '/config');
+                const data = await response.json();
+                document.getElementById('queueTimeoutInput').value = data.queue_timeout;
+            } catch (error) {
+                console.error('Failed to load queue config:', error);
+            }
+        }
+
+        // Update queue timeout
+        async function updateQueueTimeout() {
+            const timeout = parseInt(document.getElementById('queueTimeoutInput').value);
+
+            if (timeout < 10 || timeout > 3600) {
+                showMessage('Queue timeout must be between 10 and 3600 seconds', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ queue_timeout: timeout })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Queue timeout updated successfully');
+                } else {
+                    showMessage('Failed to update queue timeout', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to update queue timeout:', error);
+                showMessage('Error updating queue timeout', 'error');
+            }
+        }
+
+        // Load control settings
+        async function loadControls() {
+            try {
+                const response = await fetch(API_URL + '/controls');
+                const data = await response.json();
+
+                // Update checkboxes
+                for (const [key, value] of Object.entries(data.controls)) {
+                    const checkbox = document.getElementById('control-' + key);
+                    if (checkbox) {
+                        checkbox.checked = value;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load controls:', error);
+            }
+        }
+
+        // Save control settings
+        async function saveControls() {
+            const password = document.getElementById('adminPassword').value;
+
+            const controls = {
+                speed: document.getElementById('control-speed').checked,
+                direction: document.getElementById('control-direction').checked,
+                horn: document.getElementById('control-horn').checked,
+                bell: document.getElementById('control-bell').checked,
+                emergency_stop_all: document.getElementById('control-emergency_stop_all').checked
+            };
+
+            try {
+                const response = await fetch(API_URL + '/controls', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        admin_password: password,
+                        controls: controls
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showMessage('Control settings saved successfully');
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to save control settings', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to save controls:', error);
+                showMessage('Error saving control settings', 'error');
+            }
+        }
+
+        // Analytics functions
+        async function loadAnalytics() {
+            try {
+                const response = await fetch(API_URL + '/analytics/stats');
+                const stats = await response.json();
+
+                // Update stats cards
+                document.getElementById('stat-total-sessions').textContent = stats.total_sessions || 0;
+                document.getElementById('stat-unique-users').textContent = stats.total_users || 0;
+                document.getElementById('stat-avg-wait').textContent = stats.avg_wait_time ?
+                    formatTime(stats.avg_wait_time) : '0s';
+                document.getElementById('stat-avg-session').textContent = stats.avg_session_duration ?
+                    formatTime(stats.avg_session_duration) : '0s';
+
+                // Load control usage breakdown
+                await loadControlUsage();
+
+                // Display peak hours
+                displayPeakHours(stats.peak_hours || {});
+
+                // Display top users
+                displayTopUsers(stats.top_users || {});
+
+                // Display recent sessions
+                displayRecentSessions(stats.recent_sessions || []);
+
+            } catch (error) {
+                console.error('Failed to load analytics:', error);
+                showMessage('Error loading analytics', 'error');
+            }
+        }
+
+        async function loadControlUsage() {
+            try {
+                const response = await fetch(API_URL + '/analytics/controls');
+                const data = await response.json();
+
+                const container = document.getElementById('control-usage-chart');
+                container.innerHTML = '';
+
+                const breakdown = data.control_breakdown || {};
+                const entries = Object.entries(breakdown);
+
+                if (entries.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #6b7280;">No control usage data yet</p>';
+                    return;
+                }
+
+                entries.forEach(([control, info]) => {
+                    const bar = document.createElement('div');
+                    bar.className = 'chart-bar';
+
+                    const label = document.createElement('div');
+                    label.className = 'chart-label';
+                    label.textContent = control.replace('_', ' ');
+
+                    const barOuter = document.createElement('div');
+                    barOuter.className = 'chart-bar-outer';
+
+                    const barInner = document.createElement('div');
+                    barInner.className = 'chart-bar-inner';
+                    barInner.style.width = info.percentage + '%';
+
+                    const barValue = document.createElement('span');
+                    barValue.className = 'chart-bar-value';
+                    barValue.textContent = info.count + ' (' + info.percentage + '%)';
+
+                    barInner.appendChild(barValue);
+                    barOuter.appendChild(barInner);
+                    bar.appendChild(label);
+                    bar.appendChild(barOuter);
+                    container.appendChild(bar);
+                });
+            } catch (error) {
+                console.error('Failed to load control usage:', error);
+            }
+        }
+
+        function displayPeakHours(peakHours) {
+            const container = document.getElementById('peak-hours-list');
+            container.innerHTML = '';
+
+            const entries = Object.entries(peakHours);
+            if (entries.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280;">No peak hour data yet</p>';
+                return;
+            }
+
+            entries.forEach(([hour, count]) => {
+                const item = document.createElement('div');
+                item.className = 'stats-item';
+
+                const label = document.createElement('div');
+                label.className = 'stats-item-label';
+                const hourNum = parseInt(hour);
+                const period = hourNum >= 12 ? 'PM' : 'AM';
+                const displayHour = hourNum === 0 ? 12 : (hourNum > 12 ? hourNum - 12 : hourNum);
+                label.textContent = displayHour + ':00 ' + period;
+
+                const value = document.createElement('div');
+                value.className = 'stats-item-value';
+                value.textContent = count + ' sessions';
+
+                item.appendChild(label);
+                item.appendChild(value);
+                container.appendChild(item);
+            });
+        }
+
+        function displayTopUsers(topUsers) {
+            const container = document.getElementById('top-users-list');
+            container.innerHTML = '';
+
+            const entries = Object.entries(topUsers);
+            if (entries.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280;">No user data yet</p>';
+                return;
+            }
+
+            entries.forEach(([username, count]) => {
+                const item = document.createElement('div');
+                item.className = 'stats-item';
+
+                const label = document.createElement('div');
+                label.className = 'stats-item-label';
+                label.textContent = username;
+
+                const value = document.createElement('div');
+                value.className = 'stats-item-value';
+                value.textContent = count + ' sessions';
+
+                item.appendChild(label);
+                item.appendChild(value);
+                container.appendChild(item);
+            });
+        }
+
+        function displayRecentSessions(sessions) {
+            const container = document.getElementById('recent-sessions-list');
+            container.innerHTML = '';
+
+            if (sessions.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280;">No session data yet</p>';
+                return;
+            }
+
+            sessions.reverse().forEach(session => {
+                const item = document.createElement('div');
+                item.className = 'stats-item';
+
+                const label = document.createElement('div');
+                label.className = 'stats-item-label';
+                const date = new Date(session.session_start);
+                label.textContent = session.username + ' - ' + date.toLocaleDateString() + ' ' +
+                    date.toLocaleTimeString();
+
+                const value = document.createElement('div');
+                value.className = 'stats-item-value';
+                value.textContent = formatTime(session.session_duration);
+
+                item.appendChild(label);
+                item.appendChild(value);
+                container.appendChild(item);
+            });
+        }
+
+        async function cleanupAnalytics(days) {
+            if (!confirm(`Are you sure you want to delete analytics data older than ${days} days? This cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/analytics/cleanup?days=' + days, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`Removed ${data.removed_sessions} old session records`);
+                    loadAnalytics();
+                } else {
+                    showMessage('Failed to cleanup analytics', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to cleanup analytics:', error);
+                showMessage('Error cleaning up analytics', 'error');
+            }
+        }
+
+        function formatTime(seconds) {
+            if (seconds < 60) {
+                return Math.round(seconds) + 's';
+            } else if (seconds < 3600) {
+                return Math.round(seconds / 60) + 'm';
+            } else {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.round((seconds % 3600) / 60);
+                return hours + 'h ' + minutes + 'm';
+            }
+        }
+
+        // Profanity Filter functions
+        async function loadProfanityFilter() {
+            try {
+                const response = await fetch(API_URL + '/profanity-filter');
+                const data = await response.json();
+
+                const container = document.getElementById('blocked-words-list');
+                container.innerHTML = '';
+
+                const words = data.blocked_words || [];
+                if (words.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #6b7280;">No custom blocked words. The online API filter is handling profanity detection.</p>';
+                    return;
+                }
+
+                words.forEach(word => {
+                    const item = document.createElement('div');
+                    item.className = 'stats-item';
+
+                    const label = document.createElement('div');
+                    label.className = 'stats-item-label';
+                    label.textContent = word;
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'btn btn-small';
+                    removeBtn.style.cssText = 'padding: 5px 10px; font-size: 12px; background: #ef4444;';
+                    removeBtn.textContent = 'Remove';
+                    removeBtn.onclick = () => removeBlockedWord(word);
+
+                    item.appendChild(label);
+                    item.appendChild(removeBtn);
+                    container.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Failed to load profanity filter:', error);
+                showMessage('Error loading profanity filter', 'error');
+            }
+        }
+
+        async function addBlockedWord() {
+            const password = document.getElementById('filterAdminPassword').value;
+            const word = document.getElementById('newBlockedWord').value.trim();
+
+            if (!word) {
+                showMessage('Please enter a word to block', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/profanity-filter/add?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage('Word added successfully');
+                        document.getElementById('newBlockedWord').value = '';
+                        loadProfanityFilter();
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to add word', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to add blocked word:', error);
+                showMessage('Error adding blocked word', 'error');
+            }
+        }
+
+        async function removeBlockedWord(word) {
+            const password = document.getElementById('filterAdminPassword').value;
+
+            if (!confirm(`Remove "${word}" from blocked words?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/profanity-filter/remove?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage('Word removed successfully');
+                        loadProfanityFilter();
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to remove word', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to remove blocked word:', error);
+                showMessage('Error removing blocked word', 'error');
+            }
+        }
+
+        async function resetProfanityFilter() {
+            const password = document.getElementById('filterAdminPassword').value;
+
+            if (!confirm('Clear all custom blocked words? The online API filter will still be active.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/profanity-filter/reset?admin_password=' + encodeURIComponent(password), {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage('Custom words cleared successfully');
+                        loadProfanityFilter();
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to reset filter', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to reset profanity filter:', error);
+                showMessage('Error resetting profanity filter', 'error');
+            }
+        }
+
+        // Toggle script documentation
+        function toggleScriptDocs() {
+            const docs = document.getElementById('scriptDocs');
+            const toggle = document.getElementById('scriptDocsToggle');
+            if (docs.style.display === 'none') {
+                docs.style.display = 'block';
+                toggle.textContent = ' (click to collapse)';
+            } else {
+                docs.style.display = 'none';
+                toggle.textContent = ' (click to expand)';
+            }
+        }
+
+        // Job Scheduler functions
+        async function loadJobs() {
+            try {
+                const response = await fetch(API_URL + '/jobs');
+                const data = await response.json();
+
+                const container = document.getElementById('jobs-list');
+                container.innerHTML = '';
+
+                const jobs = data.jobs || [];
+                if (jobs.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #6b7280;">No scheduled jobs yet. Create one above!</p>';
+                    return;
+                }
+
+                jobs.forEach(job => {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ' + (job.enabled ? '#10b981' : '#6b7280');
+
+                    const header = document.createElement('div');
+                    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;';
+
+                    const title = document.createElement('div');
+                    title.innerHTML = '<strong style="font-size: 18px;">' + job.name + '</strong>' +
+                        '<span style="margin-left: 10px; padding: 3px 8px; background: ' + (job.enabled ? '#d1fae5' : '#f3f4f6') +
+                        '; color: ' + (job.enabled ? '#065f46' : '#6b7280') + '; border-radius: 4px; font-size: 12px;">' +
+                        (job.enabled ? 'Enabled' : 'Disabled') + '</span>';
+
+                    const buttons = document.createElement('div');
+                    buttons.style.cssText = 'display: flex; gap: 5px;';
+
+                    const runBtn = document.createElement('button');
+                    runBtn.className = 'btn btn-small';
+                    runBtn.textContent = 'Run Now';
+                    runBtn.style.cssText = 'padding: 5px 10px; font-size: 12px; background: #667eea;';
+                    runBtn.onclick = () => runJobNow(job.id);
+
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'btn btn-small';
+                    editBtn.textContent = 'Edit';
+                    editBtn.style.cssText = 'padding: 5px 10px; font-size: 12px; background: #f59e0b;';
+                    editBtn.onclick = () => editJob(job);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn btn-small';
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.style.cssText = 'padding: 5px 10px; font-size: 12px; background: #ef4444;';
+                    deleteBtn.onclick = () => deleteJob(job.id, job.name);
+
+                    buttons.appendChild(runBtn);
+                    buttons.appendChild(editBtn);
+                    buttons.appendChild(deleteBtn);
+
+                    header.appendChild(title);
+                    header.appendChild(buttons);
+
+                    const details = document.createElement('div');
+                    details.style.cssText = 'font-size: 14px; color: #6b7280; margin-bottom: 5px;';
+                    details.innerHTML = '<strong>Description:</strong> ' + job.description;
+
+                    const schedule = document.createElement('div');
+                    schedule.style.cssText = 'font-size: 14px; color: #6b7280; margin-bottom: 5px;';
+                    schedule.innerHTML = '<strong>Schedule:</strong> <code>' + job.cron_expression + '</code>';
+
+                    const stats = document.createElement('div');
+                    stats.style.cssText = 'font-size: 14px; color: #6b7280;';
+                    stats.innerHTML = '<strong>Last Run:</strong> ' + (job.last_run ? new Date(job.last_run).toLocaleString() : 'Never') +
+                        ' | <strong>Run Count:</strong> ' + job.run_count +
+                        ' | <strong>Last Result:</strong> ' + (job.last_result || 'N/A');
+
+                    item.appendChild(header);
+                    item.appendChild(details);
+                    item.appendChild(schedule);
+                    item.appendChild(stats);
+                    container.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Failed to load jobs:', error);
+                showMessage('Error loading jobs', 'error');
+            }
+        }
+
+        async function saveJob() {
+            const password = document.getElementById('schedulerAdminPassword').value;
+            const jobId = document.getElementById('editingJobId').value;
+
+            const jobData = {
+                name: document.getElementById('jobName').value.trim(),
+                description: document.getElementById('jobDescription').value.trim(),
+                cron_expression: document.getElementById('jobCron').value.trim(),
+                script: document.getElementById('jobScript').value.trim(),
+                enabled: true
+            };
+
+            if (!jobData.name || !jobData.description || !jobData.cron_expression || !jobData.script) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                let response;
+                if (jobId) {
+                    // Update existing job
+                    response = await fetch(API_URL + '/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(jobData)
+                    });
+                } else {
+                    // Create new job
+                    response = await fetch(API_URL + '/jobs?admin_password=' + encodeURIComponent(password), {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(jobData)
+                    });
+                }
+
+                if (response.ok) {
+                    showMessage(jobId ? 'Job updated successfully' : 'Job created successfully');
+                    cancelEdit();
+                    loadJobs();
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    const data = await response.json();
+                    showMessage(data.detail || 'Failed to save job', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to save job:', error);
+                showMessage('Error saving job', 'error');
+            }
+        }
+
+        function editJob(job) {
+            document.getElementById('jobFormTitle').textContent = 'Edit Job';
+            document.getElementById('editingJobId').value = job.id;
+            document.getElementById('jobName').value = job.name;
+            document.getElementById('jobDescription').value = job.description;
+            document.getElementById('jobCron').value = job.cron_expression;
+            document.getElementById('jobScript').value = job.script;
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function cancelEdit() {
+            document.getElementById('jobFormTitle').textContent = 'Create New Job';
+            document.getElementById('editingJobId').value = '';
+            document.getElementById('jobName').value = '';
+            document.getElementById('jobDescription').value = '';
+            document.getElementById('jobCron').value = '';
+            document.getElementById('jobScript').value = '';
+        }
+
+        async function deleteJob(jobId, jobName) {
+            const password = document.getElementById('schedulerAdminPassword').value;
+
+            if (!confirm('Delete job "' + jobName + '"? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showMessage('Job deleted successfully');
+                    loadJobs();
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to delete job', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to delete job:', error);
+                showMessage('Error deleting job', 'error');
+            }
+        }
+
+        async function runJobNow(jobId) {
+            const password = document.getElementById('schedulerAdminPassword').value;
+
+            if (!confirm('Run this job now?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + '/jobs/' + jobId + '/run?admin_password=' + encodeURIComponent(password), {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage('Job started successfully');
+                    } else {
+                        showMessage('Job failed: ' + data.error, 'error');
+                    }
+                    // Reload to see updated stats
+                    setTimeout(loadJobs, 1000);
+                } else if (response.status === 403) {
+                    showMessage('Invalid admin password', 'error');
+                } else {
+                    showMessage('Failed to run job', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to run job:', error);
+                showMessage('Error running job', 'error');
+            }
+        }
+
+        // Initialize
+        loadQueueConfig();
+        loadControls();
+    </script>
+</body>
+</html>

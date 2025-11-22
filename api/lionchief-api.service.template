@@ -1,0 +1,16 @@
+[Unit]
+Description=LionChief Train Queue API
+After=network.target bluetooth.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/path/to/LionchiefInteractiveDisplay/api
+Environment="PATH=/path/to/LionchiefInteractiveDisplay/api/venv/bin"
+EnvironmentFile=/path/to/LionchiefInteractiveDisplay/.env
+ExecStart=/path/to/LionchiefInteractiveDisplay/api/venv/bin/python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

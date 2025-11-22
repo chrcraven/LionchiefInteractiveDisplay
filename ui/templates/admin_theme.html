@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Selector - LionChief Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-top: 10px;
+        }
+
+        .current-theme {
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px solid #3b82f6;
+        }
+
+        .category-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .category-title {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .theme-card {
+            border: 3px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .theme-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .theme-card.active {
+            border-color: #10b981;
+            background: #d1fae5;
+        }
+
+        .theme-card.active::before {
+            content: "✓ ACTIVE";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #10b981;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .theme-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+
+        .color-preview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .color-box {
+            height: 50px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            font-weight: bold;
+        }
+
+        .back-link {
+            display: inline-block;
+            background: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .back-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .message.hide {
+            animation: slideOut 0.3s ease-out forwards;
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Theme Selector</h1>
+            <p class="subtitle">Choose a theme to match your LionChief train set</p>
+            <div class="current-theme">
+                <strong>Current Theme:</strong> <span id="currentThemeName"></span>
+            </div>
+            <a href="/" class="back-link">← Back to Train Control</a>
+        </header>
+
+        <div id="themesContainer"></div>
+    </div>
+
+    <script>
+        const themes = {{ themes | tojson }};
+        const currentTheme = "{{ current_theme }}";
+
+        // Display current theme name
+        function updateCurrentThemeName() {
+            for (const category in themes) {
+                for (const theme of themes[category]) {
+                    if (theme.id === currentTheme) {
+                        document.getElementById('currentThemeName').textContent = theme.name;
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Render all themes
+        function renderThemes() {
+            const container = document.getElementById('themesContainer');
+            container.innerHTML = '';
+
+            const categoryOrder = ['Christmas', 'Licensed', 'Railroad', 'Specialty', 'Classic'];
+
+            categoryOrder.forEach(category => {
+                if (!themes[category]) return;
+
+                const section = document.createElement('div');
+                section.className = 'category-section';
+
+                const title = document.createElement('h2');
+                title.className = 'category-title';
+                title.textContent = category + ' Themes';
+                section.appendChild(title);
+
+                const grid = document.createElement('div');
+                grid.className = 'theme-grid';
+
+                themes[category].forEach(theme => {
+                    const card = document.createElement('div');
+                    card.className = 'theme-card';
+                    if (theme.id === currentTheme) {
+                        card.classList.add('active');
+                    }
+
+                    const name = document.createElement('div');
+                    name.className = 'theme-name';
+                    name.textContent = theme.name;
+                    card.appendChild(name);
+
+                    const colorPreview = document.createElement('div');
+                    colorPreview.className = 'color-preview';
+
+                    ['primary', 'secondary', 'accent'].forEach(colorKey => {
+                        const colorBox = document.createElement('div');
+                        colorBox.className = 'color-box';
+                        colorBox.style.background = theme.colors[colorKey];
+                        colorBox.textContent = colorKey.toUpperCase();
+                        colorPreview.appendChild(colorBox);
+                    });
+
+                    card.appendChild(colorPreview);
+
+                    card.addEventListener('click', () => selectTheme(theme.id, theme.name));
+
+                    grid.appendChild(card);
+                });
+
+                section.appendChild(grid);
+                container.appendChild(section);
+            });
+        }
+
+        // Select a theme
+        async function selectTheme(themeId, themeName) {
+            try {
+                const response = await fetch('/api/theme', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ theme_id: themeId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`Theme changed to: ${themeName}`);
+
+                    // Reload page after a short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showMessage(`Error: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error setting theme:', error);
+                showMessage('Failed to set theme', 'error');
+            }
+        }
+
+        // Show message
+        function showMessage(text, type = 'success') {
+            const message = document.createElement('div');
+            message.className = 'message';
+            message.textContent = text;
+            if (type === 'error') {
+                message.style.background = '#ef4444';
+            }
+            document.body.appendChild(message);
+
+            setTimeout(() => {
+                message.classList.add('hide');
+                setTimeout(() => {
+                    document.body.removeChild(message);
+                }, 300);
+            }, 2000);
+        }
+
+        // Initialize
+        updateCurrentThemeName();
+        renderThemes();
+    </script>
+</body>
+</html>
