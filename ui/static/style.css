@@ -18,6 +18,66 @@ body {
     user-select: none;
 }
 
+/* Sticky Timer Banner */
+.timer-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    padding: 15px 20px;
+    border-bottom: 3px solid var(--theme-primary);
+}
+
+.timer-banner-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+.timer-banner-label {
+    font-size: 18px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.timer-banner-value {
+    font-size: 32px;
+    font-weight: bold;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* When banner is shown, add top padding to body content */
+body.has-timer-banner .container {
+    margin-top: 80px;
+}
+
+/* Time color coding for banner */
+.timer-banner-value.time-safe {
+    color: #10b981;
+}
+
+.timer-banner-value.time-warning {
+    color: #f59e0b;
+    animation: pulse-warning 2s ease-in-out infinite;
+}
+
+.timer-banner-value.time-danger {
+    color: #ef4444;
+    animation: pulse-danger 1s ease-in-out infinite;
+}
+
+.timer-banner-value.time-critical {
+    color: #dc2626;
+    animation: pulse-critical 0.5s ease-in-out infinite;
+    font-weight: 900;
+}
+
 /* Background effects layer */
 body::before {
     content: '';
@@ -761,6 +821,23 @@ input[type="range"]::-moz-range-thumb:active {
 
     .container {
         max-width: 100%;
+    }
+
+    /* Timer banner mobile adjustments */
+    .timer-banner {
+        padding: 12px 15px;
+    }
+
+    .timer-banner-label {
+        font-size: 16px;
+    }
+
+    .timer-banner-value {
+        font-size: 28px;
+    }
+
+    body.has-timer-banner .container {
+        margin-top: 70px;
     }
 
     header {

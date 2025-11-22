@@ -21,6 +21,8 @@ const elements = {
     queueLength: document.getElementById('queueLength'),
     timeRemaining: document.getElementById('timeRemaining'),
     queueList: document.getElementById('queueList'),
+    timerBanner: document.getElementById('timerBanner'),
+    timerBannerValue: document.getElementById('timerBannerValue'),
     speedSlider: document.getElementById('speedSlider'),
     speedValue: document.getElementById('speedValue'),
     stopBtn: document.getElementById('stopBtn'),
@@ -222,7 +224,9 @@ async function leaveQueue() {
         if (result.success) {
             elements.queueSection.style.display = 'none';
             elements.controlsSection.style.display = 'none';
+            elements.timerBanner.style.display = 'none';
             elements.loginSection.style.display = 'block';
+            document.body.classList.remove('has-timer-banner');
             hasControl = false;
         }
     } catch (error) {
@@ -239,6 +243,46 @@ async function loadQueueStatus() {
     }
 }
 
+function calculateEstimatedWaitTime(status, userInQueue) {
+    // Find the active user
+    const activeUser = status.queue.find(u => u.is_active);
+
+    if (!activeUser || userInQueue.position === 1) {
+        // If no active user or user is first in queue, they're next up
+        return 'Up next!';
+    }
+
+    // Calculate estimated wait time
+    // Time per user is typically 60 seconds (1 minute)
+    const TIME_PER_USER = 60;
+
+    // Number of users ahead (not including self)
+    const usersAhead = userInQueue.position - 1;
+
+    // Get active user's remaining time (if available)
+    let estimatedSeconds = 0;
+
+    if (activeUser.time_remaining) {
+        // Start with the active user's remaining time
+        estimatedSeconds = activeUser.time_remaining;
+        // Add time for other users ahead (excluding the active user)
+        estimatedSeconds += (usersAhead - 1) * TIME_PER_USER;
+    } else {
+        // If we don't have the active user's time, estimate full slots
+        estimatedSeconds = usersAhead * TIME_PER_USER;
+    }
+
+    // Format the time nicely
+    const minutes = Math.floor(estimatedSeconds / 60);
+    const seconds = Math.floor(estimatedSeconds % 60);
+
+    if (minutes === 0) {
+        return `~${seconds}s`;
+    } else {
+        return `~${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+}
+
 function updateQueueDisplay(status) {
     // Update queue info
     const userInQueue = status.queue.find(u => u.user_id === userId);
@@ -250,7 +294,9 @@ function updateQueueDisplay(status) {
         alert('Your session has expired. Please rejoin the queue.');
         elements.queueSection.style.display = 'none';
         elements.controlsSection.style.display = 'none';
+        elements.timerBanner.style.display = 'none';
         elements.loginSection.style.display = 'block';
+        document.body.classList.remove('has-timer-banner');
         hasControl = false;
         stopCountdown();
         return;
@@ -274,7 +320,9 @@ function updateQueueDisplay(status) {
 
             updateTimeDisplay();
         } else {
-            elements.timeRemaining.textContent = 'Waiting...';
+            // User is waiting - estimate time based on queue position
+            const estimatedTime = calculateEstimatedWaitTime(status, userInQueue);
+            elements.timeRemaining.textContent = estimatedTime;
             elements.timeRemaining.className = 'info-value';
             stopCountdown();
         }
@@ -283,9 +331,17 @@ function updateQueueDisplay(status) {
         hasControl = userInQueue.is_active;
 
         if (hasControl) {
+            // User has control - show controls, hide queue section, show sticky banner
             elements.controlsSection.style.display = 'block';
+            elements.queueSection.style.display = 'none';
+            elements.timerBanner.style.display = 'block';
+            document.body.classList.add('has-timer-banner');
         } else {
+            // User is waiting - hide controls, show queue section, hide sticky banner
             elements.controlsSection.style.display = 'none';
+            elements.queueSection.style.display = 'block';
+            elements.timerBanner.style.display = 'none';
+            document.body.classList.remove('has-timer-banner');
         }
     }
 
@@ -360,19 +416,29 @@ function updateTimeDisplay() {
 function updateTimeDisplayValue(timeRemaining) {
     const minutes = Math.floor(timeRemaining / 60);
     const seconds = Math.floor(timeRemaining % 60);
-    elements.timeRemaining.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    // Update both regular time display and sticky banner
+    elements.timeRemaining.textContent = timeText;
+    elements.timerBannerValue.textContent = timeText;
 
     // Apply color coding based on time remaining
     elements.timeRemaining.className = 'info-value';
+    elements.timerBannerValue.className = 'timer-banner-value';
+
+    let colorClass = '';
     if (timeRemaining > 45) {
-        elements.timeRemaining.classList.add('time-safe');
+        colorClass = 'time-safe';
     } else if (timeRemaining > 30) {
-        elements.timeRemaining.classList.add('time-warning');
+        colorClass = 'time-warning';
     } else if (timeRemaining > 15) {
-        elements.timeRemaining.classList.add('time-danger');
+        colorClass = 'time-danger';
     } else {
-        elements.timeRemaining.classList.add('time-critical');
+        colorClass = 'time-critical';
     }
+
+    elements.timeRemaining.classList.add(colorClass);
+    elements.timerBannerValue.classList.add(colorClass);
 }
 
 // Train control functions
