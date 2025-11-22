@@ -45,7 +45,6 @@ class TrainController:
         current_retry_delay = base_retry_delay
         health_check_interval = 15  # seconds between health checks when connected
         keepalive_interval = 25  # seconds between keepalive messages
-        activity_timeout = 300  # 5 minutes - stop keepalive after this much inactivity
 
         last_keepalive = 0
         consecutive_failures = 0
@@ -93,22 +92,15 @@ class TrainController:
                                 continue
 
                         current_time = time.time()
-                        time_since_last_command = current_time - self._last_command_time
 
-                        # Only send keepalive if there was recent user activity
-                        # This prevents keepalive from affecting train state (like lights) during idle periods
-                        if time_since_last_command < activity_timeout:
-                            if current_time - last_keepalive > keepalive_interval:
-                                # Send keepalive only if train is moving (speed > 0)
-                                # This prevents waking up stopped trains and affecting lights/state
-                                if self._current_speed > 0:
-                                    await self.train.motor.set_speed(int((self._current_speed / 31) * 100))
-                                    logger.debug(f"Keepalive sent (speed={self._current_speed})")
-                                    last_keepalive = current_time
-                        else:
-                            # No recent activity - allow train to disconnect naturally
-                            # We'll reconnect on the next command
-                            logger.debug(f"No activity for {int(time_since_last_command)}s, allowing natural disconnect")
+                        # Always send keepalive to prevent train from making reconnection noises
+                        # Only send when train is moving to avoid affecting stopped state
+                        if current_time - last_keepalive > keepalive_interval:
+                            if self._current_speed > 0:
+                                # Send current speed to maintain connection
+                                await self.train.motor.set_speed(self._current_speed)
+                                logger.debug(f"Keepalive sent (speed={self._current_speed})")
+                                last_keepalive = current_time
 
                     except Exception as e:
                         logger.warning(f"Connection health check failed: {e}, will attempt reconnect")
@@ -211,20 +203,18 @@ class TrainController:
             return False
 
     async def set_speed(self, speed: int) -> Dict:
-        """Set train speed (0-31)."""
+        """Set train speed (0-100)."""
         async with self._lock:
             try:
-                if speed < 0 or speed > 31:
-                    return {"success": False, "message": "Speed must be between 0 and 31"}
+                if speed < 0 or speed > 100:
+                    return {"success": False, "message": "Speed must be between 0 and 100"}
 
                 # Track user activity
                 self._last_command_time = time.time()
 
                 # Verify connection before sending command
                 if self._verify_connection():
-                    # Convert from 0-31 scale to 0-100 scale for lionchief
-                    lionchief_speed = int((speed / 31) * 100)
-                    await self.train.motor.set_speed(lionchief_speed)
+                    await self.train.motor.set_speed(speed)
                 else:
                     logger.info(f"Mock: Setting speed to {speed}")
 

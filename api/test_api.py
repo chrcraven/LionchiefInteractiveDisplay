@@ -56,7 +56,7 @@ def test_connect(address=None):
     print()
 
 def test_speed(speed):
-    """Set train speed (0-31)"""
+    """Set train speed (0-100)"""
     print(f"🚂 Setting speed to {speed}...")
     r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": speed})
     print(f"   Response: {r.json()}")

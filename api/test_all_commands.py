@@ -38,9 +38,9 @@ def get_train_status():
     return r.json()
 
 def test_speed_range():
-    """Test full speed range (0-31)"""
+    """Test full speed range (0-100)"""
     print("\n" + "="*60)
-    print("TESTING SPEED CONTROL (0-31)")
+    print("TESTING SPEED CONTROL (0-100)")
     print("="*60)
 
     # Test minimum speed
@@ -50,22 +50,22 @@ def test_speed_range():
     time.sleep(1)
 
     # Test low speeds
-    for speed in [5, 10, 15]:
+    for speed in [10, 20, 30]:
         print(f"🚂 Setting speed to {speed}...")
         r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": speed})
         print(f"   {r.json()}")
         time.sleep(2)
 
     # Test medium speeds
-    for speed in [20, 25]:
+    for speed in [50, 70]:
         print(f"🚂 Setting speed to {speed}...")
         r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": speed})
         print(f"   {r.json()}")
         time.sleep(2)
 
     # Test maximum speed (briefly)
-    print(f"🚂 Setting speed to 31 (max)...")
-    r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": 31})
+    print(f"🚂 Setting speed to 100 (max)...")
+    r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": 100})
     print(f"   {r.json()}")
     time.sleep(2)
 
