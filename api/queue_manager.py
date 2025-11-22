@@ -171,18 +171,26 @@ class QueueManager:
             pass
 
     async def _rotate_control(self):
-        """Rotate control to the next user in queue."""
+        """Remove current user from queue after timeout and assign control to next user."""
         async with self._lock:
             if not self.current_controller or not self.queue:
                 return
 
             # Find current controller in queue
             current_index = None
+            removed_user = None
             for i, user in enumerate(self.queue):
                 if user.user_id == self.current_controller.user_id:
                     current_index = i
-                    user.is_active = False
+                    removed_user = user
                     break
+
+            # Notify analytics that session is ending
+            if removed_user and self._analytics_callback:
+                try:
+                    self._analytics_callback("end_session", removed_user.user_id)
+                except Exception as e:
+                    print(f"Error in analytics callback: {e}")
 
             # Clean up train state before rotating to next user
             if self.train_controller:
@@ -192,11 +200,14 @@ class QueueManager:
                     print(f"Error during session cleanup on rotation: {e}")
 
             if current_index is not None:
-                # Move current controller to end of queue
-                user = self.queue.pop(current_index)
-                self.queue.append(user)
+                # Remove current controller from queue - they must rejoin for more time
+                self.queue.pop(current_index)
+                print(f"User {removed_user.username} session expired, removed from queue")
 
-            # Assign control to next user
+            # Clear current controller
+            self.current_controller = None
+
+            # Assign control to next user if any remain in queue
             if self.queue:
                 await self._assign_control(self.queue[0])
 

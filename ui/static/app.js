@@ -4,6 +4,9 @@ let username = null;
 let eventSource = null;  // Changed from websocket to eventSource for SSE
 let hasControl = false;
 let reconnectInterval = null;
+let countdownInterval = null;
+let localTimeRemaining = null;
+let lastServerUpdate = null;
 
 // DOM Elements
 const elements = {
@@ -240,34 +243,40 @@ function updateQueueDisplay(status) {
     // Update queue info
     const userInQueue = status.queue.find(u => u.user_id === userId);
 
+    // Check if user was removed from queue (session expired)
+    if (!userInQueue && elements.queueSection.style.display === 'block') {
+        // User was in queue but is now removed - return to login
+        console.log('User removed from queue - session expired');
+        alert('Your session has expired. Please rejoin the queue.');
+        elements.queueSection.style.display = 'none';
+        elements.controlsSection.style.display = 'none';
+        elements.loginSection.style.display = 'block';
+        hasControl = false;
+        stopCountdown();
+        return;
+    }
+
     if (userInQueue) {
         elements.userPosition.textContent = userInQueue.position;
         elements.queueLength.textContent = status.queue_length;
 
         if (userInQueue.time_remaining !== null) {
-            if (userInQueue.time_remaining === -1) {
-                elements.timeRemaining.textContent = '∞ (Unlimited)';
-                elements.timeRemaining.className = 'info-value time-unlimited';
-            } else {
-                const minutes = Math.floor(userInQueue.time_remaining / 60);
-                const seconds = Math.floor(userInQueue.time_remaining % 60);
-                elements.timeRemaining.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            // Update local time tracking from server
+            localTimeRemaining = userInQueue.time_remaining;
+            lastServerUpdate = Date.now();
 
-                // Apply color coding based on time remaining
-                elements.timeRemaining.className = 'info-value';
-                if (userInQueue.time_remaining > 120) {
-                    elements.timeRemaining.classList.add('time-safe');
-                } else if (userInQueue.time_remaining > 60) {
-                    elements.timeRemaining.classList.add('time-warning');
-                } else if (userInQueue.time_remaining > 30) {
-                    elements.timeRemaining.classList.add('time-danger');
-                } else {
-                    elements.timeRemaining.classList.add('time-critical');
-                }
+            // Start countdown if user is active and we don't have a timer yet
+            if (userInQueue.is_active && !countdownInterval) {
+                startCountdown();
+            } else if (!userInQueue.is_active && countdownInterval) {
+                stopCountdown();
             }
+
+            updateTimeDisplay();
         } else {
             elements.timeRemaining.textContent = 'Waiting...';
             elements.timeRemaining.className = 'info-value';
+            stopCountdown();
         }
 
         // Check if user has control
@@ -309,6 +318,61 @@ function updateQueueDisplay(status) {
         item.appendChild(info);
         elements.queueList.appendChild(item);
     });
+}
+
+function startCountdown() {
+    // Clear any existing interval
+    stopCountdown();
+
+    // Update display immediately
+    updateTimeDisplay();
+
+    // Start interval to update every second
+    countdownInterval = setInterval(() => {
+        if (localTimeRemaining !== null && localTimeRemaining > 0) {
+            // Decrement local time
+            const elapsed = (Date.now() - lastServerUpdate) / 1000;
+            const currentTime = Math.max(0, localTimeRemaining - elapsed);
+
+            // Update display
+            updateTimeDisplayValue(currentTime);
+
+            // If time runs out, we'll get a server update removing us from queue
+        }
+    }, 100); // Update every 100ms for smooth countdown
+}
+
+function stopCountdown() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+}
+
+function updateTimeDisplay() {
+    if (localTimeRemaining !== null && lastServerUpdate !== null) {
+        const elapsed = (Date.now() - lastServerUpdate) / 1000;
+        const currentTime = Math.max(0, localTimeRemaining - elapsed);
+        updateTimeDisplayValue(currentTime);
+    }
+}
+
+function updateTimeDisplayValue(timeRemaining) {
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = Math.floor(timeRemaining % 60);
+    elements.timeRemaining.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    // Apply color coding based on time remaining
+    elements.timeRemaining.className = 'info-value';
+    if (timeRemaining > 45) {
+        elements.timeRemaining.classList.add('time-safe');
+    } else if (timeRemaining > 30) {
+        elements.timeRemaining.classList.add('time-warning');
+    } else if (timeRemaining > 15) {
+        elements.timeRemaining.classList.add('time-danger');
+    } else {
+        elements.timeRemaining.classList.add('time-critical');
+    }
 }
 
 // Train control functions
