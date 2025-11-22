@@ -1,7 +1,7 @@
 // Global state
 let userId = null;
 let username = null;
-let websocket = null;
+let eventSource = null;  // Changed from websocket to eventSource for SSE
 let hasControl = false;
 let reconnectInterval = null;
 
@@ -34,9 +34,7 @@ const elements = {
     emergencyStopBtn: document.getElementById('emergencyStopBtn'),
     trainConnected: document.getElementById('trainConnected'),
     trainSpeed: document.getElementById('trainSpeed'),
-    trainDirection: document.getElementById('trainDirection'),
-    queueTimeoutInput: document.getElementById('queueTimeoutInput'),
-    updateConfigBtn: document.getElementById('updateConfigBtn')
+    trainDirection: document.getElementById('trainDirection')
 };
 
 // Initialize
@@ -47,11 +45,8 @@ function init() {
     // Setup event listeners
     setupEventListeners();
 
-    // Connect WebSocket
-    connectWebSocket();
-
-    // Load initial config
-    loadConfig();
+    // Connect to SSE stream for real-time updates
+    connectEventSource();
 
     // Load train status periodically
     setInterval(loadTrainStatus, 5000);
@@ -88,9 +83,6 @@ function setupEventListeners() {
     // Emergency stop
     elements.emergencyStopBtn.addEventListener('click', emergencyStop);
 
-    // Config
-    elements.updateConfigBtn.addEventListener('click', updateConfig);
-
     // Enter key in username input
     elements.usernameInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
@@ -99,15 +91,19 @@ function setupEventListeners() {
     });
 }
 
-// WebSocket connection
-function connectWebSocket() {
-    const wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://') + '/ws';
-
+// Server-Sent Events (SSE) connection for real-time updates
+function connectEventSource() {
     try {
-        websocket = new WebSocket(wsUrl);
+        // Close existing connection if any
+        if (eventSource) {
+            eventSource.close();
+        }
 
-        websocket.onopen = () => {
-            console.log('WebSocket connected');
+        // Connect to SSE endpoint (relative URL - no CORS issues!)
+        eventSource = new EventSource('/api/events');
+
+        eventSource.onopen = () => {
+            console.log('SSE connected');
             updateConnectionStatus(true);
             if (reconnectInterval) {
                 clearInterval(reconnectInterval);
@@ -115,26 +111,27 @@ function connectWebSocket() {
             }
         };
 
-        websocket.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            handleWebSocketMessage(message);
-        };
-
-        websocket.onclose = () => {
-            console.log('WebSocket disconnected');
-            updateConnectionStatus(false);
-            // Try to reconnect
-            if (!reconnectInterval) {
-                reconnectInterval = setInterval(connectWebSocket, 5000);
+        eventSource.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                handleRealtimeMessage(message);
+            } catch (error) {
+                console.error('Error parsing SSE message:', error);
             }
         };
 
-        websocket.onerror = (error) => {
-            console.error('WebSocket error:', error);
+        eventSource.onerror = (error) => {
+            console.error('SSE error:', error);
             updateConnectionStatus(false);
+            eventSource.close();
+
+            // Try to reconnect
+            if (!reconnectInterval) {
+                reconnectInterval = setInterval(connectEventSource, 5000);
+            }
         };
     } catch (error) {
-        console.error('Failed to connect WebSocket:', error);
+        console.error('Failed to connect SSE:', error);
         updateConnectionStatus(false);
     }
 }
@@ -154,13 +151,16 @@ function updateConnectionStatus(connected) {
     }
 }
 
-function handleWebSocketMessage(message) {
+function handleRealtimeMessage(message) {
     if (message.type === 'queue_update') {
         updateQueueDisplay(message.data);
+    } else if (message.type === 'connection_status') {
+        // Handle connection status updates from the API
+        console.log('API connection status:', message.connected ? 'connected' : 'disconnected');
     }
 }
 
-// API calls
+// API calls (using Flask proxy - no CORS issues!)
 async function apiCall(endpoint, method = 'GET', body = null) {
     const options = {
         method,
@@ -174,11 +174,12 @@ async function apiCall(endpoint, method = 'GET', body = null) {
     }
 
     try {
-        const response = await fetch(API_URL + endpoint, options);
+        // Use relative URL to Flask proxy instead of direct API call
+        const response = await fetch('/api' + endpoint, options);
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.detail || 'Request failed');
+            throw new Error(data.detail || data.message || 'Request failed');
         }
 
         return data;
@@ -386,32 +387,6 @@ async function loadTrainStatus() {
         elements.trainDirection.textContent = status.direction.charAt(0).toUpperCase() + status.direction.slice(1);
     } catch (error) {
         console.error('Failed to load train status:', error);
-    }
-}
-
-// Config functions
-async function loadConfig() {
-    try {
-        const config = await apiCall('/config');
-        elements.queueTimeoutInput.value = config.queue_timeout;
-    } catch (error) {
-        console.error('Failed to load config:', error);
-    }
-}
-
-async function updateConfig() {
-    const newTimeout = parseInt(elements.queueTimeoutInput.value);
-
-    if (newTimeout < 10 || newTimeout > 3600) {
-        alert('Queue timeout must be between 10 and 3600 seconds');
-        return;
-    }
-
-    try {
-        await apiCall('/config', 'POST', { queue_timeout: newTimeout });
-        alert('Configuration updated successfully');
-    } catch (error) {
-        console.error('Failed to update config:', error);
     }
 }
 
