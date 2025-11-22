@@ -34,9 +34,7 @@ const elements = {
     emergencyStopBtn: document.getElementById('emergencyStopBtn'),
     trainConnected: document.getElementById('trainConnected'),
     trainSpeed: document.getElementById('trainSpeed'),
-    trainDirection: document.getElementById('trainDirection'),
-    queueTimeoutInput: document.getElementById('queueTimeoutInput'),
-    updateConfigBtn: document.getElementById('updateConfigBtn')
+    trainDirection: document.getElementById('trainDirection')
 };
 
 // Initialize
@@ -49,9 +47,6 @@ function init() {
 
     // Connect to SSE stream for real-time updates
     connectEventSource();
-
-    // Load initial config
-    loadConfig();
 
     // Load train status periodically
     setInterval(loadTrainStatus, 5000);
@@ -87,9 +82,6 @@ function setupEventListeners() {
 
     // Emergency stop
     elements.emergencyStopBtn.addEventListener('click', emergencyStop);
-
-    // Config
-    elements.updateConfigBtn.addEventListener('click', updateConfig);
 
     // Enter key in username input
     elements.usernameInput.addEventListener('keypress', (e) => {
@@ -395,32 +387,6 @@ async function loadTrainStatus() {
         elements.trainDirection.textContent = status.direction.charAt(0).toUpperCase() + status.direction.slice(1);
     } catch (error) {
         console.error('Failed to load train status:', error);
-    }
-}
-
-// Config functions
-async function loadConfig() {
-    try {
-        const config = await apiCall('/config');
-        elements.queueTimeoutInput.value = config.queue_timeout;
-    } catch (error) {
-        console.error('Failed to load config:', error);
-    }
-}
-
-async function updateConfig() {
-    const newTimeout = parseInt(elements.queueTimeoutInput.value);
-
-    if (newTimeout < 10 || newTimeout > 3600) {
-        alert('Queue timeout must be between 10 and 3600 seconds');
-        return;
-    }
-
-    try {
-        await apiCall('/config', 'POST', { queue_timeout: newTimeout });
-        alert('Configuration updated successfully');
-    } catch (error) {
-        console.error('Failed to update config:', error);
     }
 }
 
