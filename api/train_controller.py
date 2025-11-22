@@ -205,7 +205,15 @@ class TrainController:
     async def set_speed(self, speed: int) -> Dict:
         """
         Set train speed (-100 to 100).
-        Positive values move forward, negative values move reverse, 0 stops.
+
+        Negative values force reverse direction.
+        Positive values use current direction (set via set_direction or previous negative speed).
+        Zero stops without changing direction.
+
+        Examples:
+            speed -50  → reverse at 50
+            direction reverse, then speed 50 → reverse at 50
+            speed 50 (when already forward) → forward at 50
         """
         async with self._lock:
             try:
@@ -215,15 +223,17 @@ class TrainController:
                 # Track user activity
                 self._last_command_time = time.time()
 
-                # Determine direction and actual speed from signed value
-                if speed > 0:
-                    direction = "forward"
-                    actual_speed = speed
-                elif speed < 0:
+                # Determine direction and actual speed
+                if speed < 0:
+                    # Negative speed forces reverse direction
                     direction = "reverse"
                     actual_speed = abs(speed)
+                elif speed > 0:
+                    # Positive speed uses current direction
+                    direction = self._current_direction
+                    actual_speed = speed
                 else:  # speed == 0
-                    # Just stop, don't change direction
+                    # Stop without changing direction
                     actual_speed = 0
                     direction = None
 
@@ -232,12 +242,15 @@ class TrainController:
                     # Set direction if needed (skip for speed 0)
                     if direction:
                         await self.train.motor.set_movement_direction(direction == "forward")
-                        self._current_direction = direction
+                        if speed < 0:  # Only update stored direction for negative speeds
+                            self._current_direction = direction
 
                     # Set the actual speed
                     await self.train.motor.set_speed(actual_speed)
                 else:
                     logger.info(f"Mock: Setting speed to {speed} ({direction if direction else 'stop'})")
+                    if speed < 0:  # Update stored direction for negative speeds in mock mode too
+                        self._current_direction = direction
 
                 self._current_speed = actual_speed  # Store absolute value
                 return {

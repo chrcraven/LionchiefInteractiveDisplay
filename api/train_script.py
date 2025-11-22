@@ -26,7 +26,9 @@ class TrainScriptInterpreter:
     Interpreter for train control scripts.
 
     Supported commands:
-    - speed <-100 to 100>   : Set train speed (positive=forward, negative=reverse, 0=stop)
+    - speed <-100 to 100>   : Set train speed
+                              Negative=force reverse, Positive=use current direction, 0=stop
+                              Example: speed -50 OR (reverse + speed 50) both give reverse at 50
     - forward               : Set direction forward
     - reverse               : Set direction reverse
     - toggle                : Toggle direction
