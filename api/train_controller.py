@@ -393,6 +393,35 @@ class TrainController:
                 self.connected = False  # Mark as disconnected on error
                 return {"success": False, "message": str(e)}
 
+    async def end_session_cleanup(self) -> Dict:
+        """
+        Clean up at the end of a user session.
+        Stops the train and turns off all sounds.
+        """
+        async with self._lock:
+            try:
+                # Verify connection before sending commands
+                if self._verify_connection():
+                    # Stop the train
+                    await self.train.motor.stop()
+                    # Turn off bell
+                    await self.train.sound.set_bell(False)
+                    # Ensure horn is off
+                    await self.train.sound.set_horn(False)
+                    logger.info("Session cleanup: train stopped, sounds off")
+                else:
+                    logger.info("Mock: Session cleanup - train stopped, sounds off")
+
+                self._current_speed = 0
+                return {
+                    "success": True,
+                    "message": "Session cleanup completed"
+                }
+            except Exception as e:
+                logger.error(f"Error during session cleanup: {e}")
+                self.connected = False  # Mark as disconnected on error
+                return {"success": False, "message": str(e)}
+
     def get_status(self) -> Dict:
         """Get current train status."""
         return {
