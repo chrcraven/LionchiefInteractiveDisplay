@@ -231,8 +231,14 @@ def test_invalid_inputs():
     print("="*60)
 
     # Invalid speed (too high)
-    print("❌ Testing invalid speed (100)...")
-    r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": 100})
+    print("❌ Testing invalid speed (101)...")
+    r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": 101})
+    print(f"   {r.status_code}: {r.json()}")
+    time.sleep(1)
+
+    # Invalid speed (way too high)
+    print("❌ Testing invalid speed (150)...")
+    r = requests.post(f"{BASE_URL}/train/speed", json={"user_id": USER_ID, "speed": 150})
     print(f"   {r.status_code}: {r.json()}")
     time.sleep(1)
 
