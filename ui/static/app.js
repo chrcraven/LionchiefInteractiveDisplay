@@ -291,16 +291,11 @@ function updateQueueDisplay(status) {
     if (!userInQueue && (elements.queueSection.style.display === 'block' ||
                          elements.controlsSection.style.display === 'block' ||
                          elements.timerBanner.style.display === 'block')) {
-        // User was in queue but is now removed - return to login
+        // User was in queue but is now removed - redirect back to queue page
         console.log('User removed from queue - session expired or time ran out');
         alert('Your time has ended. Please rejoin the queue if you\'d like to play again!');
-        elements.queueSection.style.display = 'none';
-        elements.controlsSection.style.display = 'none';
-        elements.timerBanner.style.display = 'none';
-        elements.loginSection.style.display = 'block';
-        document.body.classList.remove('has-timer-banner');
-        hasControl = false;
-        stopCountdown();
+        // Redirect to queue page with BASE_PATH
+        window.location.href = BASE_PATH + '/';
         return;
     }
 
