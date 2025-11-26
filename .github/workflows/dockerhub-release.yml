@@ -27,5 +27,5 @@ jobs:
           context: ./ui
           file: ./ui/Dockerfile
           push: true
-          tags: cravenator/lionchiefui:release
+          tags: cravenator/lionchiefui:${{ github.ref_name }},cravenator/lionchiefui:latest
           platforms: linux/amd64,linux/arm64
