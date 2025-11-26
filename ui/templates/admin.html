@@ -6,6 +6,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <base href="{{ base_path }}/">
     <title>Admin Control Panel - LionChief</title>
     <style>
         * {
@@ -568,7 +569,7 @@
         <header>
             <h1>⚙️ Admin Control Panel</h1>
             <p class="subtitle">Configure queue settings and train controls</p>
-            <a href="/" class="back-link">← Back to Train Control</a>
+            <a href="{{ url_for('index') }}" class="back-link">← Back to Train Control</a>
         </header>
 
         <div class="section">
@@ -1003,11 +1004,11 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             <div id="theme-tab" class="tab-content">
                 <h2>Theme Selection</h2>
                 <div class="alert alert-info">
-                    <strong>Tip:</strong> Use the <a href="/secret-admin-theme-selector" style="color: #1e40af; font-weight: 600;">dedicated theme selector page</a> for a better experience with visual previews.
+                    <strong>Tip:</strong> Use the <a href="{{ url_for('admin_theme') }}" style="color: #1e40af; font-weight: 600;">dedicated theme selector page</a> for a better experience with visual previews.
                 </div>
                 <p>Visit the theme selector page to choose from 25+ pre-configured themes matching popular Lionel train sets.</p>
                 <br>
-                <a href="/secret-admin-theme-selector" class="btn btn-primary">Open Theme Selector</a>
+                <a href="{{ url_for('admin_theme') }}" class="btn btn-primary">Open Theme Selector</a>
             </div>
         </div>
     </div>
@@ -1059,7 +1060,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
         // Load queue configuration
         async function loadQueueConfig() {
             try {
-                const response = await fetch('/api/config');
+                const response = await fetch('api/config');
                 const data = await response.json();
                 document.getElementById('queueTimeoutInput').value = data.queue_timeout;
             } catch (error) {
@@ -1077,7 +1078,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch('/api/config', {
+                const response = await fetch('api/config', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1101,7 +1102,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
         // Load control settings
         async function loadControls() {
             try {
-                const response = await fetch('/api/controls');
+                const response = await fetch('api/controls');
                 const data = await response.json();
 
                 // Update checkboxes
@@ -1129,7 +1130,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             };
 
             try {
-                const response = await fetch('/api/controls', {
+                const response = await fetch('api/controls', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1157,7 +1158,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
         // Analytics functions
         async function loadAnalytics() {
             try {
-                const response = await fetch('/api/analytics/stats');
+                const response = await fetch('api/analytics/stats');
                 const stats = await response.json();
 
                 // Update stats cards
@@ -1188,7 +1189,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
 
         async function loadControlUsage() {
             try {
-                const response = await fetch('/api/analytics/controls');
+                const response = await fetch('api/analytics/controls');
                 const data = await response.json();
 
                 const container = document.getElementById('control-usage-chart');
@@ -1326,7 +1327,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch('/api/analytics/cleanup?days=' + days, {
+                const response = await fetch('api/analytics/cleanup?days=' + days, {
                     method: 'DELETE'
                 });
 
@@ -1359,7 +1360,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
         // Profanity Filter functions
         async function loadProfanityFilter() {
             try {
-                const response = await fetch('/api/profanity-filter');
+                const response = await fetch('api/profanity-filter');
                 const data = await response.json();
 
                 const container = document.getElementById('blocked-words-list');
@@ -1405,7 +1406,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch('/api/profanity-filter/add?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
+                const response = await fetch('api/profanity-filter/add?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
                     method: 'POST'
                 });
 
@@ -1437,7 +1438,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch('/api/profanity-filter/remove?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
+                const response = await fetch('api/profanity-filter/remove?word=' + encodeURIComponent(word) + '&admin_password=' + encodeURIComponent(password), {
                     method: 'DELETE'
                 });
 
@@ -1468,7 +1469,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch('/api/profanity-filter/reset?admin_password=' + encodeURIComponent(password), {
+                const response = await fetch('api/profanity-filter/reset?admin_password=' + encodeURIComponent(password), {
                     method: 'POST'
                 });
 
@@ -1507,7 +1508,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
         // Job Scheduler functions
         async function loadJobs() {
             try {
-                const response = await fetch('/api/jobs');
+                const response = await fetch('api/jobs');
                 const data = await response.json();
 
                 const container = document.getElementById('jobs-list');
@@ -1607,14 +1608,14 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
                 let response;
                 if (jobId) {
                     // Update existing job
-                    response = await fetch('/api/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
+                    response = await fetch('api/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
                         method: 'PUT',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(jobData)
                     });
                 } else {
                     // Create new job
-                    response = await fetch('/api/jobs?admin_password=' + encodeURIComponent(password), {
+                    response = await fetch('api/jobs?admin_password=' + encodeURIComponent(password), {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(jobData)
@@ -1664,7 +1665,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch('/api/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
+                const response = await fetch('api/jobs/' + jobId + '?admin_password=' + encodeURIComponent(password), {
                     method: 'DELETE'
                 });
 
@@ -1690,7 +1691,7 @@ bell off" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-r
             }
 
             try {
-                const response = await fetch('/api/jobs/' + jobId + '/run?admin_password=' + encodeURIComponent(password), {
+                const response = await fetch('api/jobs/' + jobId + '/run?admin_password=' + encodeURIComponent(password), {
                     method: 'POST'
                 });
 

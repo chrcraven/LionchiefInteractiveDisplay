@@ -34,5 +34,6 @@ services:
       - "5000:5000"
     environment:
       - API_URL=${API_URL:-http://localhost:8000}
+      - BASE_PATH=${BASE_PATH:-}
     depends_on:
       - api

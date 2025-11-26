@@ -105,7 +105,7 @@ function connectEventSource() {
         }
 
         // Connect to SSE endpoint (relative URL - no CORS issues!)
-        eventSource = new EventSource('/api/events');
+        eventSource = new EventSource('api/events');
 
         eventSource.onopen = () => {
             console.log('SSE connected');
@@ -180,7 +180,7 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 
     try {
         // Use relative URL to Flask proxy instead of direct API call
-        const response = await fetch('/api' + endpoint, options);
+        const response = await fetch('api' + endpoint, options);
         const data = await response.json();
 
         if (!response.ok) {
