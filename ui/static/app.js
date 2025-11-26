@@ -104,8 +104,8 @@ function connectEventSource() {
             eventSource.close();
         }
 
-        // Connect to SSE endpoint (relative URL - no CORS issues!)
-        eventSource = new EventSource('api/events');
+        // Connect to SSE endpoint (includes BASE_PATH for proper routing)
+        eventSource = new EventSource(BASE_PATH + '/api/events');
 
         eventSource.onopen = () => {
             console.log('SSE connected');
@@ -179,8 +179,8 @@ async function apiCall(endpoint, method = 'GET', body = null) {
     }
 
     try {
-        // Use relative URL to Flask proxy instead of direct API call
-        const response = await fetch('api' + endpoint, options);
+        // Use BASE_PATH + /api for proper routing through Traefik
+        const response = await fetch(BASE_PATH + '/api' + endpoint, options);
         const data = await response.json();
 
         if (!response.ok) {
