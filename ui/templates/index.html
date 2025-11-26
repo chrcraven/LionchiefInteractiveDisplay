@@ -6,8 +6,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <base href="{{ base_path }}/">
     <title>LionChief Train Controller - {{ theme.name }}</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         :root {
             --theme-primary: {{ theme.colors.primary }};
@@ -141,6 +142,6 @@
         // API calls now go through Flask proxy (no direct API access needed)
         // This eliminates CORS and private network access issues
     </script>
-    <script src="/static/app.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

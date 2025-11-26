@@ -15,12 +15,23 @@ app.secret_key = os.getenv("SECRET_KEY", "lionchief-train-secret-key-change-in-p
 
 # Configuration
 API_URL = os.getenv("API_URL", "http://localhost:8000")
+BASE_PATH = os.getenv("BASE_PATH", "").rstrip('/')  # e.g., "/lionchief" or ""
 THEME_FILE = "current_theme.json"
+
+# Configure Flask application root for subdirectory hosting
+if BASE_PATH:
+    app.config['APPLICATION_ROOT'] = BASE_PATH
 
 # WebSocket to SSE bridge
 sse_clients = []
 ws_thread = None
 ws_connected = False
+
+
+@app.context_processor
+def inject_base_path():
+    """Make base_path available to all templates."""
+    return {'base_path': BASE_PATH}
 
 
 def load_current_theme():

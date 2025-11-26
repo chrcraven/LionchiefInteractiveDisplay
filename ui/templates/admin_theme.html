@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="{{ base_path }}/">
     <title>Theme Selector - LionChief Admin</title>
     <style>
         * {
@@ -197,7 +198,7 @@
             <div class="current-theme">
                 <strong>Current Theme:</strong> <span id="currentThemeName"></span>
             </div>
-            <a href="/" class="back-link">← Back to Train Control</a>
+            <a href="{{ url_for('index') }}" class="back-link">← Back to Train Control</a>
         </header>
 
         <div id="themesContainer"></div>
@@ -278,7 +279,7 @@
         // Select a theme
         async function selectTheme(themeId, themeName) {
             try {
-                const response = await fetch('/api/theme', {
+                const response = await fetch('api/theme', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
