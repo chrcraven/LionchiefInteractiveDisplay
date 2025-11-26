@@ -18,9 +18,9 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 BASE_PATH = os.getenv("BASE_PATH", "").rstrip('/')  # e.g., "/lionchief" or ""
 THEME_FILE = "current_theme.json"
 
-# Configure Flask application root for subdirectory hosting
-if BASE_PATH:
-    app.config['APPLICATION_ROOT'] = BASE_PATH
+# Note: BASE_PATH is only used for <base href> in templates for static asset loading.
+# API routes are at /api/* and work with absolute URLs in JavaScript.
+# Traefik stripPrefix middleware handles the /prod/train/v1 prefix before reaching Flask.
 
 # WebSocket to SSE bridge
 sse_clients = []

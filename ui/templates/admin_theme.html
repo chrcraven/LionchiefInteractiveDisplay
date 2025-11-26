@@ -205,6 +205,8 @@
     </div>
 
     <script>
+        // Inject BASE_PATH for API routing
+        const BASE_PATH = "{{ base_path }}";
         const themes = {{ themes | tojson }};
         const currentTheme = "{{ current_theme }}";
 
@@ -279,7 +281,7 @@
         // Select a theme
         async function selectTheme(themeId, themeName) {
             try {
-                const response = await fetch('api/theme', {
+                const response = await fetch(BASE_PATH + '/api/theme', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
